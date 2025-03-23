@@ -1,0 +1,12 @@
+/client/bin
+/client/obj
+*.sln
+
+/server/vessel-data/
+
+.bsp
+.metals
+.vscode
+target
+metals.sbt
+

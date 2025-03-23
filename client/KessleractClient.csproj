@@ -1,0 +1,55 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net4.8</TargetFramework>
+    <PlatformTarget>x64</PlatformTarget>
+    <!-- Set this path to your KSP installation -->
+    <KSPBasePath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program</KSPBasePath>
+    <ManagedPath>$(KSPBasePath)\KSP_x64_Data\Managed</ManagedPath>
+    <PluginsPath>$(KSPBasePath)\GameData\KessleractClient\Plugins</PluginsPath>
+  </PropertyGroup>
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>$(ManagedPath)\Assembly-CSharp.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine">
+      <HintPath>$(ManagedPath)\UnityEngine.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.CoreModule">
+      <HintPath>$(ManagedPath)\UnityEngine.CoreModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.IMGUIModule">
+      <HintPath>$(ManagedPath)\UnityEngine.IMGUIModule.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.UI">
+      <HintPath>$(ManagedPath)\UnityEngine.UI.dll</HintPath>
+    </Reference>
+    <Reference Include="UnityEngine.AnimationModule">
+      <HintPath>$(ManagedPath)\UnityEngine.AnimationModule.dll</HintPath>
+    </Reference>
+    <PackageReference Include="System.Text.Json" Version="9.0.3" />
+  </ItemGroup>
+  <Target Name="PostBuild" AfterTargets="Build">
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" 
+        DestinationFolder="$(PluginsPath)" />
+    <Copy SourceFiles="$(OutputPath)System.Text.Json.dll" 
+        DestinationFolder="$(PluginsPath)" />
+    <Copy SourceFiles="$(OutputPath)System.Text.Encodings.Web.dll" 
+        DestinationFolder="$(PluginsPath)" />
+    <Copy SourceFiles="$(OutputPath)System.Memory.dll" 
+        DestinationFolder="$(PluginsPath)" />
+    <Copy SourceFiles="$(OutputPath)System.Runtime.CompilerServices.Unsafe.dll" 
+        DestinationFolder="$(PluginsPath)" />
+    <Copy SourceFiles="$(OutputPath)System.IO.Pipelines.dll" 
+        DestinationFolder="$(PluginsPath)" />
+    <Copy SourceFiles="$(OutputPath)Microsoft.Bcl.AsyncInterfaces.dll" 
+        DestinationFolder="$(PluginsPath)" />
+    <Copy SourceFiles="$(OutputPath)System.Threading.Tasks.Extensions.dll" 
+      DestinationFolder="$(PluginsPath)" />
+    <Copy SourceFiles="$(OutputPath)System.Buffers.dll" 
+      DestinationFolder="$(PluginsPath)" />
+    <Copy SourceFiles="$(OutputPath)System.Numerics.Vectors.dll" 
+      DestinationFolder="$(PluginsPath)" />
+    <Copy SourceFiles="$(OutputPath)System.ValueTuple.dll" 
+      DestinationFolder="$(PluginsPath)" />
+  </Target>
+</Project>

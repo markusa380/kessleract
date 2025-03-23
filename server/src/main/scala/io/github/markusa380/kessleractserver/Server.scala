@@ -1,0 +1,31 @@
+package io.github.markusa380.kessleractserver
+
+import cats.effect.IO
+import org.http4s.implicits._
+import com.comcast.ip4s._
+import org.http4s.ember.client.EmberClientBuilder
+import org.http4s.ember.server.EmberServerBuilder
+import org.http4s.server.middleware.Logger
+import org.http4s.server.middleware.EntityLimiter
+
+object Server:
+
+  def run: IO[Nothing] =
+    (for {
+      client <- EmberClientBuilder.default[IO].build
+      vesselDatabase <- VesselDatabase.make.toResource
+      httpApp = Routes.routes(vesselDatabase).orNotFound
+
+      // With Middlewares in place
+      finalHttpApp = Logger.httpApp(true, true)(
+        EntityLimiter(httpApp, 100_000)
+      )
+
+      _ <-
+        EmberServerBuilder
+          .default[IO]
+          .withHost(ipv4"0.0.0.0")
+          .withPort(port"8080")
+          .withHttpApp(finalHttpApp)
+          .build
+    } yield ()).useForever

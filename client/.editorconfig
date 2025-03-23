@@ -1,0 +1,6 @@
+# .editorconfig
+root = true
+
+[*.cs]
+# Use inline braces for methods, properties, etc.
+csharp_new_line_before_open_brace = none
