@@ -26,6 +26,9 @@
     <Reference Include="UnityEngine.AnimationModule">
       <HintPath>$(ManagedPath)\UnityEngine.AnimationModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.UnityWebRequestModule">
+      <HintPath>$(ManagedPath)\UnityEngine.UnityWebRequestModule.dll</HintPath>
+    </Reference>
     <PackageReference Include="System.Text.Json" Version="9.0.3" />
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="Build">
