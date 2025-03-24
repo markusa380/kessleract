@@ -10,7 +10,7 @@ using System.Text;
 
 namespace Kessleract {
 
-    [KSPAddon(KSPAddon.Startup.Flight, false)]
+    // [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class Client : MonoBehaviour {
 
         public static Client Instance { get; private set; }

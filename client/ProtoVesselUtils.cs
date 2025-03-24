@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using KSPAchievements;
 
 namespace Kessleract {
     class ProtoVesselUtils {

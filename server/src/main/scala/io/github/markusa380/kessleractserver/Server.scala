@@ -7,14 +7,16 @@ import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.server.middleware.Logger
 import org.http4s.server.middleware.EntityLimiter
+import cats.effect.kernel.Ref
+import io.github.markusa380.kessleractserver.model.VesselCollection
 
 object Server:
 
   def run: IO[Nothing] =
     (for {
-      client <- EmberClientBuilder.default[IO].build
-      vesselDatabase <- VesselDatabase.make.toResource
-      httpApp = Routes.routes(vesselDatabase).orNotFound
+      client         <- EmberClientBuilder.default[IO].build
+      vesselDatabase <- Ref.of[IO, VesselCollection](Map.empty).toResource
+      httpApp = Routes(vesselDatabase).routes.orNotFound
 
       // With Middlewares in place
       finalHttpApp = Logger.httpApp(true, true)(
