@@ -1,31 +1,28 @@
 package io.github.markusa380.kessleractserver
 
 import cats.effect.IO
-import org.http4s.dsl.io._
-
-import io.circe.generic.semiauto._
+import cats.effect.kernel.Ref
 import io.circe._
+import io.circe.generic.semiauto._
+import io.github.markusa380.kessleractserver.model._
 import org.http4s._
 import org.http4s.circe._
+import org.http4s.dsl.io._
 
-import io.github.markusa380.kessleractserver.model.VesselSpec
-import io.github.markusa380.kessleractserver.model.VesselCollection
-import cats.effect.kernel.Ref
-
-class Routes(vesselDatabase: Ref[IO, VesselCollection]):
+class Routes(vesselDatabase: Ref[IO, HashedVesselCollection]):
 
   def download(request: DownloadRequest): IO[DownloadResponse] = for {
     vesselsCollection <- vesselDatabase.get
-    vesselsPerBody = request.bodies.toList.map { case (body, take) =>
-      val vessels = vesselsCollection.getOrElse(body, Map.empty)
-      body ->
-        vessels.iterator
-          .filter { case (hash, _) => !request.excludedHashes.contains(hash) }
-          .map { case (hash, vessel) => UniqueVessel(hash, vessel) }
-          .take(take)
-          .toList
-    }.toMap
-  } yield DownloadResponse(vesselsPerBody)
+
+    vessels = vesselsCollection
+      .getOrElse(request.body, Map.empty)
+      .iterator
+      .filter { case (hash, _) => !request.excludedHashes.contains(hash) }
+      .map { case (hash, vessel) => UniqueVessel(hash, vessel) }
+      .take(request.take)
+      .toList
+
+  } yield DownloadResponse(vessels)
 
   def upload(request: UploadRequest): IO[Unit] =
     vesselDatabase.update(collection =>
@@ -53,8 +50,8 @@ class Routes(vesselDatabase: Ref[IO, VesselCollection]):
     }
 
   case class UploadRequest(body: Int, vessel: VesselSpec)
-  case class DownloadRequest(bodies: Map[Int, Int], excludedHashes: Set[Int])
-  case class DownloadResponse(bodies: Map[Int, List[UniqueVessel]])
+  case class DownloadRequest(body: Int, take: Int, excludedHashes: Set[Int])
+  case class DownloadResponse(vessels: List[UniqueVessel])
   case class UniqueVessel(hash: Int, vessel: VesselSpec)
 
   implicit val uploadRequestDecoder: Decoder[UploadRequest]                       = deriveDecoder[UploadRequest]

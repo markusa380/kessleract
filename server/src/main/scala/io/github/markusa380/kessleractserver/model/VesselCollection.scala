@@ -1,24 +1,29 @@
 package io.github.markusa380.kessleractserver.model
 
 import cats.effect._
-import io.circe.syntax._
 import io.circe.parser.decode
-import java.nio.file.{Files, Paths, StandardCopyOption}
-import java.nio.charset.StandardCharsets
-import java.io.IOException
+import io.circe.syntax._
 
-type VesselCollection = Map[Int, Map[Int, VesselSpec]]
+import java.io.IOException
+import java.nio.charset.StandardCharsets
+import java.nio.file.Files
+import java.nio.file.Paths
+import java.nio.file.StandardCopyOption
+
+type HashedVesselCollection = Map[Int, Map[Int, VesselSpec]]
+type VesselCollection = Map[Int, List[VesselSpec]]
 
 val tempFilePath = Paths.get("./vessels.json.tmp")
 val filePath     = Paths.get("./vessels.json")
 
-def persist(vessels: VesselCollection): IO[Unit] = {
-  val json = vessels.asJson
+def persist(vessels: HashedVesselCollection): IO[Unit] = {
+  val unhashed: VesselCollection =
+    vessels.view.mapValues(_.values.toList).toMap
 
   IO {
     val _ = Files.write(
       tempFilePath,
-      json.spaces4.getBytes(StandardCharsets.UTF_8)
+       unhashed.asJson.spaces4.getBytes(StandardCharsets.UTF_8)
     )
 
     val _ = Files.move(
@@ -30,7 +35,7 @@ def persist(vessels: VesselCollection): IO[Unit] = {
   }
 }
 
-def load: IO[VesselCollection] = {
+def load: IO[HashedVesselCollection] = {
   IO {
     if Files.exists(filePath) then
       val json =
@@ -38,7 +43,7 @@ def load: IO[VesselCollection] = {
       decode[VesselCollection](json) match {
         case Left(errors) =>
           throw new IOException(s"Failed to decode vessels.json: $errors")
-        case Right(vessels) => vessels
+        case Right(vessels) => vessels.view.mapValues(_.map(v => v.vesselHash -> v).toMap).toMap
       }
     else Map.empty
   }

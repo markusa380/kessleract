@@ -1,6 +1,7 @@
 package io.github.markusa380.kessleractserver.model
 
-import io.circe._, io.circe.generic.semiauto._
+import io.circe._
+import io.circe.generic.semiauto._
 
 final case class VesselSpec(
     orbit: OrbitSpec,
@@ -23,7 +24,7 @@ final case class OrbitSpec(
     eccentricity: Double,
     inclination: Double,
     argumentOfPeriapsis: Double,
-    LAN: Double,
+    longitudeOfAscendingNode: Double,
     meanAnomalyAtEpoch: Double,
     epoch: Double
 )
@@ -37,7 +38,7 @@ final case class PartSpec(
     name: String,
     position: Vector3,
     rotation: Quaternion,
-    parent: Int
+    children: List[PartSpec]
 )
 
 object PartSpec {

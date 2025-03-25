@@ -10,15 +10,14 @@ using System.Text;
 
 namespace Kessleract {
 
-    // [KSPAddon(KSPAddon.Startup.Flight, false)]
+    [KSPAddon(KSPAddon.Startup.Flight, false)]
     public class Client : MonoBehaviour {
 
         public static Client Instance { get; private set; }
 
         public static Vessel.Situations[] allowableSituations = new Vessel.Situations[] {
-          Vessel.Situations.LANDED,
-          Vessel.Situations.ORBITING,
-          Vessel.Situations.ESCAPING
+          // TODO: Vessel.Situations.LANDED,
+          Vessel.Situations.ORBITING
         };
 
         public void Start() {
@@ -45,13 +44,20 @@ namespace Kessleract {
         private IEnumerator UploadCurrentVehicle() {
             Log.Info("Uploading current vehicle");
 
-            var requestBody = new JsonObject {
-                { "data", GetVehicleJson() },
-                { "body", FlightGlobals.currentMainBody.flightGlobalsIndex },
-                { "id", FlightGlobals.ActiveVessel.id.ToString() }
+            if (FlightGlobals.ActiveVessel == null) {
+                Log.Info("No active vessel to upload");
+                yield break;
+            }
+
+            var vesselSpec = VesselSpec.From(FlightGlobals.ActiveVessel.protoVessel);
+            var requestBody = new UploadRequest {
+                body = FlightGlobals.ActiveVessel.mainBody.flightGlobalsIndex,
+                vessel = vesselSpec
             };
+            var requestBodyJson = JsonSerializer.Serialize(requestBody);
+
             var request = new UnityWebRequest("http://localhost:8080/upload", "POST");
-            byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBody.ToJsonString());
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBodyJson);
             request.uploadHandler = new UploadHandlerRaw(bodyRaw);
             request.downloadHandler = new DownloadHandlerBuffer();
             request.SetRequestHeader("Content-Type", "application/json");
@@ -70,70 +76,65 @@ namespace Kessleract {
         private IEnumerator DownloadAbandonedVehicles() {
             Log.Info("Downloading abandoned vehicles");
 
-            var allCelestialBodies = FlightGlobals.Bodies.Select(body => body.flightGlobalsIndex).ToList();
-            var abandonedVesselsPerCelestialBody = new Dictionary<int, int>();
+            foreach (var body in FlightGlobals.Bodies) {
+                Log.Info($"Downloading abandoned vessels for body {body.name} ({body.flightGlobalsIndex})");
 
-            FlightGlobals.Vessels.ForEach(vessel => {
-                if (vessel.vesselName.StartsWith("[Abandoned]")) {
-                    var celestialBodyIndex = vessel.mainBody.flightGlobalsIndex;
-                    if (!abandonedVesselsPerCelestialBody.ContainsKey(celestialBodyIndex)) {
-                        abandonedVesselsPerCelestialBody[celestialBodyIndex] = 0;
+                var nonAbandonedVesselsCount = 0;
+                List<int> abandonedVesselsHashes = new List<int>();
+                FlightGlobals.Vessels.ForEach(vessel => {
+                    var notAbandoned = !vessel.vesselName.StartsWith(Naming.ABANDONED_VESSEL_PREFIX);
+                    var okSituation = allowableSituations.Contains(vessel.situation);
+                    var okBody = vessel.mainBody == body;
+
+                    if (okBody) {
+                        if (notAbandoned) {
+                            if (okSituation) {
+                                nonAbandonedVesselsCount++;
+                            }
+                        }
+                        else {
+                            var hash = vessel.vesselName.Substring(Naming.ABANDONED_VESSEL_PREFIX.Length);
+                            var hashInt = int.Parse(hash);
+                            abandonedVesselsHashes.Add(hashInt);
+                        }
                     }
-                    abandonedVesselsPerCelestialBody[celestialBodyIndex]++;
-                }
-            });
+                });
 
-            var excludedIds = new JsonArray();
+                var take = Math.Max(0, MAX_COUNT_PER_BODY - nonAbandonedVesselsCount);
 
-            FlightGlobals.Vessels.ForEach(vessel => {
-                excludedIds.Add(vessel.id.ToString());
-            });
-
-            var bodies = new JsonObject();
-
-            for (int i = 0; i < allCelestialBodies.Count; i++) {
-                var existingCount = abandonedVesselsPerCelestialBody.ContainsKey(allCelestialBodies[i]) ? abandonedVesselsPerCelestialBody[allCelestialBodies[i]] : 0;
-                var countToDownload = Math.Max(0, MAX_COUNT_PER_BODY - existingCount);
-                bodies.Add(allCelestialBodies[i].ToString(), countToDownload);
-            }
-
-            var requestBody = new JsonObject {
-                    { "bodies", bodies },
-                    { "excludedIds", excludedIds }
+                var requestBody = new DownloadRequest {
+                    body = body.flightGlobalsIndex,
+                    take = take,
+                    excludedHashes = abandonedVesselsHashes.ToArray()
                 };
 
-            var request = new UnityWebRequest("http://localhost:8080/download", "POST");
-            byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBody.ToJsonString());
-            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-            request.downloadHandler = new DownloadHandlerBuffer();
-            request.SetRequestHeader("Content-Type", "application/json");
-            yield return request.SendWebRequest();
+                var requestBodyJson = JsonSerializer.Serialize(requestBody);
 
-            if (request.isNetworkError) {
-                Log.Info("Error while downloading vessels: " + request.error);
+                var request = new UnityWebRequest("http://localhost:8080/download", "POST");
+                byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBodyJson);
+                request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+                request.downloadHandler = new DownloadHandlerBuffer();
+                request.SetRequestHeader("Content-Type", "application/json");
+                yield return request.SendWebRequest();
+
+                if (request.isNetworkError) {
+                    Log.Info("Error while downloading vessels: " + request.error);
+                }
+                else if (request.responseCode != 200) {
+                    Log.Info("Unexpected response code while downloading vessels: " + request.responseCode);
+                }
+                else {
+                    var responseBodyJson = request.downloadHandler.text;
+                    var downloadResponse = JsonSerializer.Deserialize<DownloadResponse>(responseBodyJson);
+
+                    foreach (var uniqueVessel in downloadResponse.vessels) {
+                        var vesselSpec = uniqueVessel.vessel;
+                        var protoVessel = vesselSpec.ToProtoVessel(body, uniqueVessel.hash);
+                        protoVessel.Load(HighLogic.CurrentGame.flightState);
+                    }
+
+                }
             }
-            else if (request.responseCode != 200) {
-                Log.Info("Unexpected response code while downloading vessels: " + request.responseCode);
-            }
-            else {
-                Log.Info("Downloaded: " + request.downloadHandler.text);
-                // TODO: Create vessels from the downloaded data after sanitizing it
-
-            }
-        }
-
-
-        public JsonObject GetVehicleJson() {
-            var vehicle = FlightGlobals.ActiveVessel;
-            var configNode = new ConfigNode();
-            vehicle.protoVessel.Save(configNode);
-            return Json.ConfigNodeToJson(configNode);
-        }
-
-        public void CreateVehicleFromJson(string json) {
-            var jsonElement = JsonDocument.Parse(json).RootElement;
-            var configNode = Json.JsonToConfigNode(jsonElement, "");
-            ProtoVesselUtils.CreateAbandonedVessel(configNode);
         }
     }
 }

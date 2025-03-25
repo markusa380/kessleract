@@ -29,6 +29,9 @@
     <Reference Include="UnityEngine.UnityWebRequestModule">
       <HintPath>$(ManagedPath)\UnityEngine.UnityWebRequestModule.dll</HintPath>
     </Reference>
+    <Reference Include="UnityEngine.JSONSerializeModule">
+      <HintPath>$(ManagedPath)\UnityEngine.JSONSerializeModule.dll</HintPath>
+    </Reference>
     <PackageReference Include="System.Text.Json" Version="9.0.3" />
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="Build">

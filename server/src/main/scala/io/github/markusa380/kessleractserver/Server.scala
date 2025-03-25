@@ -1,21 +1,21 @@
 package io.github.markusa380.kessleractserver
 
 import cats.effect.IO
-import org.http4s.implicits._
+import cats.effect.kernel.Ref
 import com.comcast.ip4s._
+import io.github.markusa380.kessleractserver.model._
 import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
-import org.http4s.server.middleware.Logger
+import org.http4s.implicits._
 import org.http4s.server.middleware.EntityLimiter
-import cats.effect.kernel.Ref
-import io.github.markusa380.kessleractserver.model.VesselCollection
+import org.http4s.server.middleware.Logger
 
 object Server:
 
   def run: IO[Nothing] =
     (for {
       client         <- EmberClientBuilder.default[IO].build
-      vesselDatabase <- Ref.of[IO, VesselCollection](Map.empty).toResource
+      vesselDatabase <- Ref.of[IO, HashedVesselCollection](Map.empty).toResource
       httpApp = Routes(vesselDatabase).routes.orNotFound
 
       // With Middlewares in place
