@@ -15,7 +15,8 @@ object Server:
   def run: IO[Nothing] =
     (for {
       client         <- EmberClientBuilder.default[IO].build
-      vesselDatabase <- Ref.of[IO, HashedVesselCollection](Map.empty).toResource
+      loaded         <- load.toResource
+      vesselDatabase <- Ref.of[IO, HashedVesselCollection](loaded).toResource
       httpApp = Routes(vesselDatabase).routes.orNotFound
 
       // With Middlewares in place

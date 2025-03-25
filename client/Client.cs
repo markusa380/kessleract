@@ -1,9 +1,7 @@
-﻿using System.Text.Json;
-using System.Linq;
+﻿using System.Linq;
 using UnityEngine;
 using System;
 using UnityEngine.Networking;
-using System.Text.Json.Nodes;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
@@ -54,7 +52,7 @@ namespace Kessleract {
                 body = FlightGlobals.ActiveVessel.mainBody.flightGlobalsIndex,
                 vessel = vesselSpec
             };
-            var requestBodyJson = JsonSerializer.Serialize(requestBody);
+            var requestBodyJson = requestBody.ToJSON().Stringify();
 
             var request = new UnityWebRequest("http://localhost:8080/upload", "POST");
             byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBodyJson);
@@ -108,7 +106,7 @@ namespace Kessleract {
                     excludedHashes = abandonedVesselsHashes.ToArray()
                 };
 
-                var requestBodyJson = JsonSerializer.Serialize(requestBody);
+                var requestBodyJson = requestBody.ToJSON().Stringify();
 
                 var request = new UnityWebRequest("http://localhost:8080/download", "POST");
                 byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBodyJson);
@@ -125,11 +123,15 @@ namespace Kessleract {
                 }
                 else {
                     var responseBodyJson = request.downloadHandler.text;
-                    var downloadResponse = JsonSerializer.Deserialize<DownloadResponse>(responseBodyJson);
+                    var downloadResponse = DownloadResponse.FromJSON(Json.FromJson(responseBodyJson));
 
                     foreach (var uniqueVessel in downloadResponse.vessels) {
                         var vesselSpec = uniqueVessel.vessel;
+
                         var protoVessel = vesselSpec.ToProtoVessel(body, uniqueVessel.hash);
+                        // Enable when ready
+                        // var lifeTime = 100 * 24 * 60 * 60;
+                        // protoVessel.discoveryInfo = ProtoVessel.CreateDiscoveryNode(DiscoveryLevels.Presence, UntrackedObjectClass.A, 0, lifeTime);
                         protoVessel.Load(HighLogic.CurrentGame.flightState);
                     }
 

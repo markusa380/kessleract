@@ -24,30 +24,41 @@ class Routes(vesselDatabase: Ref[IO, HashedVesselCollection]):
 
   } yield DownloadResponse(vessels)
 
-  def upload(request: UploadRequest): IO[Unit] =
-    vesselDatabase.update(collection =>
+  def upload(request: UploadRequest): IO[Unit] = for {
+    db <- vesselDatabase.updateAndGet(collection =>
       val hash           = request.vessel.vesselHash
       val body           = request.body
       val vessels        = collection.getOrElse(body, Map.empty)
       val updatedVessels = vessels.updated(hash, request.vessel)
       collection.updated(body, updatedVessels)
     )
+    _ <- persist(db)
+  } yield ()
 
   val routes: HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case req @ POST -> Root / "download" =>
         for {
-          req  <- req.as[DownloadRequest]
+          req <- req
+            .as[DownloadRequest]
+            .onError(logDecodingErrors)
           resp <- download(req)
           resp <- Ok(resp)
         } yield resp
       case req @ POST -> Root / "upload" =>
         for {
-          req  <- req.as[UploadRequest]
+          req <- req
+            .as[UploadRequest]
+            .onError(logDecodingErrors)
           resp <- upload(req)
           resp <- Ok()
         } yield resp
     }
+
+  def logDecodingErrors(error: Throwable): IO[Unit] = error match {
+    case _: DecodingFailure => IO(println(s"Error while decoding upload request: $error"))
+    case _                  => IO.unit
+  }
 
   case class UploadRequest(body: Int, vessel: VesselSpec)
   case class DownloadRequest(body: Int, take: Int, excludedHashes: Set[Int])

@@ -20,8 +20,6 @@ namespace Kessleract {
         private readonly int mainGuid = Guid.NewGuid().GetHashCode();
         private Rect rect = new Rect(100, 100, 200, 100);
 
-        private Vector2 scrollPosition = Vector2.zero;
-
         public void Start() {
             GameEvents.onShowUI.Add(OnShowUI);
             GameEvents.onHideUI.Add(OnHideUI);
@@ -36,7 +34,7 @@ namespace Kessleract {
                     null,
                     null,
                     null,
-                    AppScenes.SPACECENTER,
+                    AppScenes.FLIGHT,
                     icon
                 );
 
@@ -53,38 +51,9 @@ namespace Kessleract {
             }
         }
 
-        private string vehicleJson = "";
-
         private void WindowFunction(int windowID) {
             GUILayout.BeginVertical();
-
-            if (GUILayout.Button("Generate Vehicle XML")) {
-                vehicleJson = Client.Instance.GetVehicleJson().ToJsonString();
-            }
-
-            scrollPosition = GUILayout.BeginScrollView(
-                  scrollPosition, GUILayout.Width(180), GUILayout.Height(100));
-
-            GUILayout.TextArea(vehicleJson);
-
-            GUILayout.EndScrollView();
-
-            if (GUILayout.Button("Copy to Clipboard")) {
-                GUIUtility.systemCopyBuffer = vehicleJson;
-            }
-
-            if (GUILayout.Button("Paste from Clipboard")) {
-                vehicleJson = GUIUtility.systemCopyBuffer;
-            }
-
-            if (GUILayout.Button("Instantiate")) {
-                Client.Instance.CreateVehicleFromJson(vehicleJson);
-            }
-
-            if (GUILayout.Button("Clear")) {
-                vehicleJson = "";
-            }
-
+            GUILayout.Button("Click me!");
             GUILayout.EndVertical();
             GUI.DragWindow();
         }

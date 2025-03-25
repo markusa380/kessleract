@@ -2,7 +2,7 @@
 /client/obj
 *.sln
 
-/server/vessel-data/
+/server/vessels.json
 
 .bsp
 .metals

@@ -11,7 +11,7 @@ import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 
 type HashedVesselCollection = Map[Int, Map[Int, VesselSpec]]
-type VesselCollection = Map[Int, List[VesselSpec]]
+type VesselCollection       = Map[Int, List[VesselSpec]]
 
 val tempFilePath = Paths.get("./vessels.json.tmp")
 val filePath     = Paths.get("./vessels.json")
@@ -23,7 +23,7 @@ def persist(vessels: HashedVesselCollection): IO[Unit] = {
   IO {
     val _ = Files.write(
       tempFilePath,
-       unhashed.asJson.spaces4.getBytes(StandardCharsets.UTF_8)
+      unhashed.asJson.spaces4.getBytes(StandardCharsets.UTF_8)
     )
 
     val _ = Files.move(

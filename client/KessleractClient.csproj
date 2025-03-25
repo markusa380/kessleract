@@ -32,30 +32,9 @@
     <Reference Include="UnityEngine.JSONSerializeModule">
       <HintPath>$(ManagedPath)\UnityEngine.JSONSerializeModule.dll</HintPath>
     </Reference>
-    <PackageReference Include="System.Text.Json" Version="9.0.3" />
   </ItemGroup>
   <Target Name="PostBuild" AfterTargets="Build">
     <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" 
         DestinationFolder="$(PluginsPath)" />
-    <Copy SourceFiles="$(OutputPath)System.Text.Json.dll" 
-        DestinationFolder="$(PluginsPath)" />
-    <Copy SourceFiles="$(OutputPath)System.Text.Encodings.Web.dll" 
-        DestinationFolder="$(PluginsPath)" />
-    <Copy SourceFiles="$(OutputPath)System.Memory.dll" 
-        DestinationFolder="$(PluginsPath)" />
-    <Copy SourceFiles="$(OutputPath)System.Runtime.CompilerServices.Unsafe.dll" 
-        DestinationFolder="$(PluginsPath)" />
-    <Copy SourceFiles="$(OutputPath)System.IO.Pipelines.dll" 
-        DestinationFolder="$(PluginsPath)" />
-    <Copy SourceFiles="$(OutputPath)Microsoft.Bcl.AsyncInterfaces.dll" 
-        DestinationFolder="$(PluginsPath)" />
-    <Copy SourceFiles="$(OutputPath)System.Threading.Tasks.Extensions.dll" 
-      DestinationFolder="$(PluginsPath)" />
-    <Copy SourceFiles="$(OutputPath)System.Buffers.dll" 
-      DestinationFolder="$(PluginsPath)" />
-    <Copy SourceFiles="$(OutputPath)System.Numerics.Vectors.dll" 
-      DestinationFolder="$(PluginsPath)" />
-    <Copy SourceFiles="$(OutputPath)System.ValueTuple.dll" 
-      DestinationFolder="$(PluginsPath)" />
   </Target>
 </Project>
