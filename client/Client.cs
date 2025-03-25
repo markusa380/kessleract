@@ -92,8 +92,9 @@ namespace Kessleract {
                         }
                         else {
                             var hash = vessel.vesselName.Substring(Naming.ABANDONED_VESSEL_PREFIX.Length);
-                            var hashInt = int.Parse(hash);
-                            abandonedVesselsHashes.Add(hashInt);
+                            if (int.TryParse(hash, out int hashInt)) {
+                                abandonedVesselsHashes.Add(hashInt);
+                            }
                         }
                     }
                 });
