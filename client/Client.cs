@@ -14,7 +14,6 @@ namespace Kessleract {
         public static Client Instance { get; private set; }
 
         public static Vessel.Situations[] allowableSituations = new Vessel.Situations[] {
-          // TODO: Vessel.Situations.LANDED,
           Vessel.Situations.ORBITING
         };
 
@@ -27,6 +26,7 @@ namespace Kessleract {
         public void Update() {
             timeSinceUpload += Time.deltaTime;
 
+            /*
             if (timeSinceUpload > 60.0) {
                 timeSinceUpload = 0.0;
                 if (FlightGlobals.ActiveVessel != null && allowableSituations.Contains(FlightGlobals.ActiveVessel.situation)) {
@@ -37,9 +37,18 @@ namespace Kessleract {
                     Log.Info("Not uploading vehicle because it is not in a valid situation");
                 }
             }
+            */
         }
 
-        private IEnumerator UploadCurrentVehicle() {
+        public void StartUploadCurrentVehicle() {
+            StartCoroutine(UploadCurrentVehicleCoroutine());
+        }
+
+        public void StartDownloadAbandonedVehicles() {
+            StartCoroutine(DownloadAbandonedVehiclesCoroutine());
+        }
+
+        private IEnumerator UploadCurrentVehicleCoroutine() {
             Log.Info("Uploading current vehicle");
 
             if (FlightGlobals.ActiveVessel == null) {
@@ -67,11 +76,13 @@ namespace Kessleract {
             else if (request.responseCode != 200) {
                 Log.Info("Unexpected response code while uploading vessel: " + request.responseCode);
             }
+
+            Log.Info("Upload of active vessel complete");
         }
 
         static readonly int MAX_COUNT_PER_BODY = 5;
 
-        private IEnumerator DownloadAbandonedVehicles() {
+        private IEnumerator DownloadAbandonedVehiclesCoroutine() {
             Log.Info("Downloading abandoned vehicles");
 
             foreach (var body in FlightGlobals.Bodies) {
@@ -130,9 +141,35 @@ namespace Kessleract {
                         var vesselSpec = uniqueVessel.vessel;
 
                         var protoVessel = vesselSpec.ToProtoVessel(body, uniqueVessel.hash);
+
+                        var orbit = protoVessel.orbitSnapShot.Load();
+                        var relativePos = orbit.getRelativePositionAtUT(Planetarium.GetUniversalTime());
+
+                        var isSafeOrbit = true;
+                        foreach (var vessel in FlightGlobals.Vessels) {
+                            if (vessel.orbit.referenceBody != body) {
+                                continue;
+                            }
+
+                            var vesselRelativePos = vessel.orbit.getRelativePositionAtUT(Planetarium.GetUniversalTime());
+
+                            var distance = (relativePos - vesselRelativePos).magnitude;
+
+                            if (distance < 100) {
+                                Log.Info($"Not loading abandoned vessel because it is too close to another vessel ({vessel.vesselName} - {distance}m)");
+                                isSafeOrbit = false;
+                                break;
+                            }
+                        }
+
+                        if (!isSafeOrbit) {
+                            continue;
+                        }
+
                         // Enable when ready
                         // var lifeTime = 100 * 24 * 60 * 60;
                         // protoVessel.discoveryInfo = ProtoVessel.CreateDiscoveryNode(DiscoveryLevels.Presence, UntrackedObjectClass.A, 0, lifeTime);
+
                         protoVessel.Load(HighLogic.CurrentGame.flightState);
                     }
 

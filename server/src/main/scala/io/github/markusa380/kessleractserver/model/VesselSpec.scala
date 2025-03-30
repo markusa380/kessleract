@@ -5,7 +5,7 @@ import io.circe.generic.semiauto._
 
 final case class VesselSpec(
     orbit: OrbitSpec,
-    parts: List[PartSpec]
+    parts: List[PartSpec],
 ) {
   // To deduplicate vessels, while being lenient with positions, order of parts, etc.
   def vesselHash: Int   = parts.map(_.name).sorted.hashCode
@@ -38,7 +38,8 @@ final case class PartSpec(
     name: String,
     position: Vector3,
     rotation: Quaternion,
-    children: List[PartSpec]
+    attachments: List[String],
+    parentIndex: Int,
 )
 
 object PartSpec {

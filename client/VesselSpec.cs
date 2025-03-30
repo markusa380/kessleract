@@ -1,20 +1,20 @@
-using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 using UnityEngine;
 
 namespace Kessleract {
 
-    [Serializable]
     public class VesselSpec {
         public OrbitSpec orbitSpec;
-        public PartSpec[] partSpecs;
+        public PartSpec[] parts;
 
         public ProtoVessel ToProtoVessel(CelestialBody body, int hash) {
             var flightId = ShipConstruction.GetUniqueFlightID(HighLogic.CurrentGame.flightState);
 
-            var parts = new List<ConfigNode>();
-            for (int i = 0; i < partSpecs.Length; i++) {
-                partSpecs[i].ToProtoParts(0, flightId, parts);
+            var protoParts = new ConfigNode[parts.Length];
+            for (int i = 0; i < parts.Length; i++) {
+                var partSpec = parts[i];
+                protoParts[i] = partSpec.ToProto(flightId);
             }
 
             var orbit = orbitSpec.ToOrbit(body);
@@ -24,97 +24,72 @@ namespace Kessleract {
               VesselType.Unknown,
               orbit,
               0,
-              parts.ToArray()
+              protoParts
             );
 
-            return new ProtoVessel(vesselNode, HighLogic.CurrentGame);
+            var vessel = new ProtoVessel(vesselNode, HighLogic.CurrentGame);
+
+            for (int i = 0; i < protoParts.Length; i++) {
+                var part = protoParts[i];
+                var partSnapshot = vessel.protoPartSnapshots[i];
+                partSnapshot.attachNodes.Clear();
+                foreach (var attachment in parts[i].attachments) {
+                    partSnapshot.attachNodes.Add(new AttachNodeSnapshot(attachment));
+                }
+            }
+
+            return vessel;
         }
 
         public static VesselSpec From(ProtoVessel protoVessel) {
 
             var allParts = protoVessel.protoPartSnapshots;
-            var parentToChildren = new Dictionary<int, List<int>>();
-
+            var parts = new PartSpec[allParts.Count];
             for (int i = 0; i < allParts.Count; i++) {
                 var part = allParts[i];
-                if (!parentToChildren.ContainsKey(part.parentIdx)) {
-                    parentToChildren[part.parentIdx] = new List<int>();
-                }
-                parentToChildren[part.parentIdx].Add(i + 1);
+                parts[i] = PartSpec.FromSnapshot(part);
             }
-
-            // TODO: Delete me
-            foreach (var kvp in parentToChildren) {
-                Debug.Log($"Parent Index: {kvp.Key}, Children: [{string.Join(", ", kvp.Value)}]");
-            }
+            
 
             return new VesselSpec {
                 orbitSpec = OrbitSpec.FromSnapshot(protoVessel.orbitSnapShot),
-                partSpecs = PartSpecChildrenOfPartIndex(0, allParts, parentToChildren)
+                parts = parts
             };
-        }
-
-        private static PartSpec[] PartSpecChildrenOfPartIndex(
-          int index,
-          List<ProtoPartSnapshot> allParts,
-          Dictionary<int, List<int>> parentToChildren
-        ) {
-            if (!parentToChildren.ContainsKey(index)) {
-                return new PartSpec[0];
-            }
-
-            var children = parentToChildren[index];
-            var partSpecs = new PartSpec[children.Count];
-
-            for (int i = 0; i < children.Count; i++) {
-                var childIndex = children[i];
-                var child = allParts[childIndex - 1];
-                var grandchildren = PartSpecChildrenOfPartIndex(childIndex, allParts, parentToChildren);
-                partSpecs[i] = new PartSpec {
-                    name = child.partName,
-                    position = child.position,
-                    rotation = child.rotation,
-                    children = grandchildren
-                };
-            }
-
-            return partSpecs;
         }
 
         public static VesselSpec FromJSON(JsonNode jsonNode) {
             var obj = jsonNode.AsObject();
             var orbitSpec = OrbitSpec.FromJSON(obj.dict["orbit"]);
-            var partSpecsJson = obj.dict["parts"].AsArray();
-            var partSpecs = new PartSpec[partSpecsJson.nodes.Length];
-            for (int i = 0; i < partSpecsJson.nodes.Length; i++) {
-                partSpecs[i] = PartSpec.FromJSON(partSpecsJson.nodes[i]);
+            var partsSpecs = obj.dict["parts"].AsArray();
+            var parts = new PartSpec[partsSpecs.nodes.Length];
+            for (int i = 0; i < partsSpecs.nodes.Length; i++) {
+                parts[i] = PartSpec.FromJSON(partsSpecs.nodes[i]);
             }
-
+            
             return new VesselSpec {
                 orbitSpec = orbitSpec,
-                partSpecs = partSpecs
+                parts = parts
             };
         }
 
         public JsonObject ToJSON() {
-            var partSpecs = new JsonArray {
-                nodes = new JsonNode[this.partSpecs.Length]
+            var parts = new JsonArray {
+                nodes = new JsonNode[this.parts.Length]
             };
 
-            for (int i = 0; i < this.partSpecs.Length; i++) {
-                partSpecs.nodes[i] = this.partSpecs[i].ToJSON();
+            for (int i = 0; i < this.parts.Length; i++) {
+                parts.nodes[i] = this.parts[i].ToJSON();
             }
 
             return new JsonObject {
                 dict = new Dictionary<string, JsonNode> {
                     { "orbit", orbitSpec.ToJSON() },
-                    { "parts", partSpecs }
+                    { "parts", parts },
                 }
             };
         }
     }
 
-    [Serializable]
     public class OrbitSpec {
         public double semiMajorAxis;
         public double eccentricity;
@@ -179,45 +154,48 @@ namespace Kessleract {
         }
     }
 
-    [Serializable]
     public class PartSpec {
         public string name;
+        public int parentIndex;
         public Vector3 position;
 
         public Quaternion rotation;
+        // TODO: Make this class based
+        public string[] attachments;
 
-        // Unfortunate hack to ensure that we can serialize and deserialize
-        // the children of a part. This is necessary because Unity's JSON
-        // serialization does not support recursion.
-        public PartSpec[] children;
-
-        public void ToProtoParts(
-          int parent,
-          uint flightId,
-          List<ConfigNode> resultParts
+        public ConfigNode ToProto(
+          uint flightId
         ) {
             var partNode = ProtoVessel.CreatePartNode(name, flightId, null);
-            partNode.SetValue("parent", parent);
+            partNode.SetValue("parent", parentIndex);
             partNode.SetValue("position", KSPUtil.WriteVector(position));
             partNode.SetValue("rotation", KSPUtil.WriteQuaternion(rotation));
+            // Attach nodes doesn't seem to get picked up from here, so we set them after creating the ProtoVessel
+            return partNode;
+        }
 
-            resultParts.Add(partNode);
-            var newParent = resultParts.Count - 1;
-
-            for (int i = 0; i < children.Length; i++) {
-                var parsedChild = children[i];
-                parsedChild.ToProtoParts(newParent, flightId, resultParts);
+        public static PartSpec FromSnapshot(ProtoPartSnapshot snapshot) {
+            var attachments = new string[snapshot.attachNodes.Count];
+            for (int i = 0; i < snapshot.attachNodes.Count; i++) {
+                attachments[i] = snapshot.attachNodes[i].Save();
             }
+            return new PartSpec {
+                name = snapshot.partName,
+                position = snapshot.position,
+                rotation = snapshot.rotation,
+                parentIndex = snapshot.parentIdx,
+                attachments = attachments,
+            };
         }
 
         public static PartSpec FromJSON(JsonNode jsonNode) {
             var obj = jsonNode.AsObject();
             var positionJson = obj.dict["position"].AsObject();
             var rotationJson = obj.dict["rotation"].AsObject();
-            var childrenJson = obj.dict["children"].AsArray();
-            var children = new PartSpec[childrenJson.nodes.Length];
-            for (int i = 0; i < childrenJson.nodes.Length; i++) {
-                children[i] = FromJSON(childrenJson.nodes[i]);
+            var attachmentsJson = obj.dict["attachments"].AsArray();
+            var attachments = new string[attachmentsJson.nodes.Length];
+            for (int i = 0; i < attachmentsJson.nodes.Length; i++) {
+                attachments[i] = attachmentsJson.nodes[i].AsString().value;
             }
 
             return new PartSpec {
@@ -233,17 +211,18 @@ namespace Kessleract {
                   (float)rotationJson.dict["z"].AsNumber().value,
                   (float)rotationJson.dict["w"].AsNumber().value
                 ),
-                children = children
+                attachments = attachments,
+                parentIndex = (int)obj.dict["parentIndex"].AsNumber().value
             };
         }
 
         public JsonObject ToJSON() {
-            var children = new JsonArray {
-                nodes = new JsonNode[this.children.Length]
+            var attachmentsJson = new JsonArray {
+                nodes = new JsonNode[attachments.Length]
             };
 
-            for (int i = 0; i < this.children.Length; i++) {
-                children.nodes[i] = this.children[i].ToJSON();
+            for (int i = 0; i < attachments.Length; i++) {
+                attachmentsJson.nodes[i] = new JsonString(attachments[i]);
             }
 
             return new JsonObject {
@@ -264,7 +243,8 @@ namespace Kessleract {
                             { "w", new JsonNumber(rotation.w) }
                         }
                     }},
-                    { "children", new JsonArray { nodes = children.nodes } }
+                    { "attachments", attachmentsJson },
+                    { "parentIndex", new JsonNumber(parentIndex) }
                 }
             };
         }

@@ -53,7 +53,12 @@ namespace Kessleract {
 
         private void WindowFunction(int windowID) {
             GUILayout.BeginVertical();
-            GUILayout.Button("Click me!");
+            if (GUILayout.Button("Upload Active Vessel")) {
+                Client.Instance.StartUploadCurrentVehicle();
+            }
+            if (GUILayout.Button("Download Abandoned Vehicles")) {
+                Client.Instance.StartDownloadAbandonedVehicles();
+            }
             GUILayout.EndVertical();
             GUI.DragWindow();
         }
