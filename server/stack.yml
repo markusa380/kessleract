@@ -1,8 +1,8 @@
 version: '3.8'
 services:
   server:
-    image: kessleract-server:latest
-     labels:
+    image: kessleract-server:0.0.1-SNAPSHOT
+    labels:
       - "traefik.enable=true"
       - "traefik.docker.network=servernet"
       - "traefik.http.routers.kessleract.rule=Host(`kessleract.click`)"
@@ -12,7 +12,6 @@ services:
       - "traefik.http.middlewares.ratelimiter.ratelimit.average=10"
       - "traefik.http.middlewares.ratelimiter.ratelimit.period=1m"
       - "traefik.http.middlewares.ratelimiter.ratelimit.burst=20"
-    container_name: kessleract_server
     depends_on:
       - db
     environment:

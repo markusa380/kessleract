@@ -17,6 +17,7 @@ lazy val root = (project in file("."))
     semanticdbEnabled := true,
     semanticdbVersion := scalafixSemanticdb.revision,
     dockerExposedPorts := Seq(8080),
+    dockerBaseImage := "eclipse-temurin:21",
     libraryDependencies ++= Seq(
       "org.http4s" %% "http4s-ember-server" % Http4sVersion,
       "org.http4s" %% "http4s-ember-client" % Http4sVersion,
