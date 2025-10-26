@@ -3,11 +3,13 @@ package io.github.markusa380.kessleractserver
 import cats.effect.IO
 import cats.effect.kernel.Ref
 import io.circe._
-import io.circe.generic.semiauto._
 import io.github.markusa380.kessleractserver.model._
 import org.http4s._
-import org.http4s.circe._
 import org.http4s.dsl.io._
+import kessleract.pb.Service.*
+import scala.jdk.CollectionConverters._
+import com.google.protobuf.GeneratedMessage
+import com.google.protobuf.util.JsonFormat
 
 class Routes(vesselDatabase: Ref[IO, HashedVesselCollection]):
 
@@ -15,21 +17,21 @@ class Routes(vesselDatabase: Ref[IO, HashedVesselCollection]):
     vesselsCollection <- vesselDatabase.get
 
     vessels = vesselsCollection
-      .getOrElse(request.body, Map.empty)
+      .getOrElse(request.getBody(), Map.empty)
       .iterator
-      .filter { case (hash, _) => !request.excludedHashes.contains(hash) }
-      .map { case (hash, vessel) => UniqueVessel(hash, vessel) }
-      .take(request.take)
+      .filter { case (hash, _) => !request.getExcludedHashesList().contains(hash) }
+      .map { case (hash, vessel) => UniqueVesselSpec.newBuilder().setHash(hash).setVessel(vessel).build() }
+      .take(request.getTake())
       .toList
 
-  } yield DownloadResponse(vessels)
+  } yield DownloadResponse.newBuilder().addAllVessels(vessels.asJava).build()
 
   def upload(request: UploadRequest): IO[Unit] = for {
     db <- vesselDatabase.updateAndGet(collection =>
-      val hash           = request.vessel.vesselHash
-      val body           = request.body
+      val hash           = vesselHash(request.getVessel())
+      val body           = request.getBody()
       val vessels        = collection.getOrElse(body, Map.empty)
-      val updatedVessels = vessels.updated(hash, request.vessel)
+      val updatedVessels = vessels.updated(hash, request.getVessel())
       collection.updated(body, updatedVessels)
     )
     _ <- persist(db)
@@ -60,15 +62,21 @@ class Routes(vesselDatabase: Ref[IO, HashedVesselCollection]):
     case _                  => IO.unit
   }
 
-  case class UploadRequest(body: Int, vessel: VesselSpec)
-  case class DownloadRequest(body: Int, take: Int, excludedHashes: Set[Int])
-  case class DownloadResponse(vessels: List[UniqueVessel])
-  case class UniqueVessel(hash: Int, vessel: VesselSpec)
+  implicit val downloadRequestDecoder: EntityDecoder[IO, DownloadRequest] =
+    EntityDecoder[IO, String].map(raw =>
+      val builder = DownloadRequest.newBuilder()
+      JsonFormat.parser().merge(raw, builder)
+      builder.build()
+    )
 
-  implicit val uploadRequestDecoder: Decoder[UploadRequest]                       = deriveDecoder[UploadRequest]
-  implicit val downloadRequestDecoder: Decoder[DownloadRequest]                   = deriveDecoder[DownloadRequest]
-  implicit val downloadResponseEncoder: Encoder[DownloadResponse]                 = deriveEncoder[DownloadResponse]
-  implicit val uniqueVesselEncoder: Encoder[UniqueVessel]                         = deriveEncoder[UniqueVessel]
-  implicit val uploadRequestEntityDecoder: EntityDecoder[IO, UploadRequest]       = jsonOf[IO, UploadRequest]
-  implicit val downloadRequestEntityDecoder: EntityDecoder[IO, DownloadRequest]   = jsonOf[IO, DownloadRequest]
-  implicit val downloadResponseEntityEncoder: EntityEncoder[IO, DownloadResponse] = jsonEncoderOf[IO, DownloadResponse]
+  implicit val uploadRequestDecoder: EntityDecoder[IO, UploadRequest] =
+    EntityDecoder[IO, String].map(raw =>
+      val builder = UploadRequest.newBuilder()
+      JsonFormat.parser().merge(raw, builder)
+      builder.build()
+    )
+
+  implicit def responseEncoder[A <: GeneratedMessage]: EntityEncoder[IO, A] =
+    EntityEncoder[IO, String].contramap[A](msg => JsonFormat.printer().print(msg))
+
+  

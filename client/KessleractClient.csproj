@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <PropertyGroup>
-    <TargetFramework>net4.8</TargetFramework>
+    <TargetFramework>net4.5</TargetFramework>
     <PlatformTarget>x64</PlatformTarget>
     <!-- Set this path to your KSP installation -->
     <KSPBasePath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program</KSPBasePath>
@@ -33,8 +33,12 @@
       <HintPath>$(ManagedPath)\UnityEngine.JSONSerializeModule.dll</HintPath>
     </Reference>
   </ItemGroup>
+  <ItemGroup>
+    <!-- Any version after 3.10.1 depends on System.Memory and is unusable for us -->
+    <PackageReference Include="Google.Protobuf" Version="3.10.1" />
+  </ItemGroup>
   <Target Name="PostBuild" AfterTargets="Build">
-    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" 
-        DestinationFolder="$(PluginsPath)" />
+    <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(PluginsPath)" />
+    <Copy SourceFiles="$(OutputPath)Google.Protobuf.dll" DestinationFolder="$(PluginsPath)" />
   </Target>
 </Project>

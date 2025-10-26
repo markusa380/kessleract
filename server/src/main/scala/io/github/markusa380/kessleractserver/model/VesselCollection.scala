@@ -10,6 +10,9 @@ import java.nio.file.Files
 import java.nio.file.Paths
 import java.nio.file.StandardCopyOption
 
+import kessleract.pb.Messages.*
+import io.github.markusa380.kessleractserver.{vesselSpecSerde, vesselHash}
+
 type HashedVesselCollection = Map[Int, Map[Int, VesselSpec]]
 type VesselCollection       = Map[Int, List[VesselSpec]]
 
@@ -43,7 +46,7 @@ def load: IO[HashedVesselCollection] = {
       decode[VesselCollection](json) match {
         case Left(errors) =>
           throw new IOException(s"Failed to decode vessels.json: $errors")
-        case Right(vessels) => vessels.view.mapValues(_.map(v => v.vesselHash -> v).toMap).toMap
+        case Right(vessels) => vessels.view.mapValues(_.map(v => vesselHash(v) -> v).toMap).toMap
       }
     else Map.empty
   }

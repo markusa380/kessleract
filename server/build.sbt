@@ -3,6 +3,7 @@ val MunitVersion = "1.1.0"
 val LogbackVersion = "1.5.16"
 val MunitCatsEffectVersion = "2.0.0"
 val CirceVersion = "0.14.12"
+val ProtobufVersion = "4.33.0"
 
 lazy val root = (project in file("."))
   .settings(
@@ -20,7 +21,10 @@ lazy val root = (project in file("."))
       "ch.qos.logback" % "logback-classic" % LogbackVersion,
       "io.circe" %% "circe-core" % CirceVersion,
       "io.circe" %% "circe-parser" % CirceVersion,
-      "io.circe" %% "circe-generic" % CirceVersion
+      "io.circe" %% "circe-generic" % CirceVersion,
+      "com.google.protobuf" % "protobuf-java" % ProtobufVersion,
+      "com.google.protobuf" % "protobuf-java-util" % ProtobufVersion
+
     ),
     assembly / assemblyMergeStrategy := {
       case "module-info.class" => MergeStrategy.discard

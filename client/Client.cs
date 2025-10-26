@@ -5,6 +5,7 @@ using UnityEngine.Networking;
 using System.Collections;
 using System.Collections.Generic;
 using System.Text;
+using Google.Protobuf;
 
 namespace Kessleract {
 
@@ -56,12 +57,12 @@ namespace Kessleract {
                 yield break;
             }
 
-            var vesselSpec = VesselSpec.From(FlightGlobals.ActiveVessel.protoVessel);
-            var requestBody = new UploadRequest {
-                body = FlightGlobals.ActiveVessel.mainBody.flightGlobalsIndex,
-                vessel = vesselSpec
+            var vesselSpec = ToProtobuf.To(FlightGlobals.ActiveVessel.protoVessel);
+            var requestBody = new Pb.UploadRequest {
+                Body = FlightGlobals.ActiveVessel.mainBody.flightGlobalsIndex,
+                Vessel = vesselSpec
             };
-            var requestBodyJson = requestBody.ToJSON().Stringify();
+            var requestBodyJson = JsonFormatter.Default.Format(requestBody);
 
             var request = new UnityWebRequest("http://localhost:8080/upload", "POST");
             byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBodyJson);
@@ -112,13 +113,14 @@ namespace Kessleract {
 
                 var take = Math.Max(0, MAX_COUNT_PER_BODY - nonAbandonedVesselsCount);
 
-                var requestBody = new DownloadRequest {
-                    body = body.flightGlobalsIndex,
-                    take = take,
-                    excludedHashes = abandonedVesselsHashes.ToArray()
+                var requestBody = new Pb.DownloadRequest {
+                    Body = body.flightGlobalsIndex,
+                    Take = take,
                 };
 
-                var requestBodyJson = requestBody.ToJSON().Stringify();
+                requestBody.ExcludedHashes.AddRange(abandonedVesselsHashes);
+
+                var requestBodyJson = JsonFormatter.Default.Format(requestBody);
 
                 var request = new UnityWebRequest("http://localhost:8080/download", "POST");
                 byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBodyJson);
@@ -135,12 +137,12 @@ namespace Kessleract {
                 }
                 else {
                     var responseBodyJson = request.downloadHandler.text;
-                    var downloadResponse = DownloadResponse.FromJSON(Json.FromJson(responseBodyJson));
+                    var downloadResponse = Pb.DownloadResponse.Parser.ParseJson(responseBodyJson);
 
-                    foreach (var uniqueVessel in downloadResponse.vessels) {
-                        var vesselSpec = uniqueVessel.vessel;
+                    foreach (var uniqueVessel in downloadResponse.Vessels) {
+                        var vesselSpec = uniqueVessel.Vessel;
 
-                        var protoVessel = vesselSpec.ToProtoVessel(body, uniqueVessel.hash);
+                        var protoVessel = FromProtobuf.From(vesselSpec, body, uniqueVessel.Hash);
 
                         var orbit = protoVessel.orbitSnapShot.Load();
                         var relativePos = orbit.getRelativePositionAtUT(Planetarium.GetUniversalTime());

@@ -1,0 +1,29 @@
+syntax = "proto3";
+
+package kessleract.pb;
+
+import "messages.proto";
+
+message UploadRequest {
+    int32 body = 1;
+    VesselSpec vessel = 2;
+}
+
+message UploadResponse {
+    bool success = 1;
+}
+
+message DownloadRequest {
+    int32 body = 1;
+    repeated int32 excluded_hashes = 2;
+    int32 take = 3;
+}
+
+message DownloadResponse {
+    repeated UniqueVesselSpec vessels = 1;
+}
+
+message UniqueVesselSpec {
+    VesselSpec vessel = 1;
+    int32 hash = 2;
+}

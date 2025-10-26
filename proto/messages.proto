@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package kessleract.pb;
+
+message VesselSpec {
+    OrbitSpec orbitSpec = 1;
+    repeated PartSpec partSpecs = 2;
+}
+
+message OrbitSpec {
+  double semiMajorAxis = 1;
+  double eccentricity = 2;
+  double inclination = 3;
+  double argumentOfPeriapsis = 4;
+  double longitudeOfAscendingNode = 5;
+  double meanAnomalyAtEpoch = 6;
+  double epoch = 7;
+}
+
+message PartSpec {
+  string name = 1;
+  int32 parentIndex = 2;
+  Vector3 position = 3;
+  Quaternion rotation = 4;
+  repeated string attachments = 5;
+}
+
+message Vector3 {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+}
+
+message Quaternion {
+  float x = 1;
+  float y = 2;
+  float z = 3;
+  float w = 4;
+}
