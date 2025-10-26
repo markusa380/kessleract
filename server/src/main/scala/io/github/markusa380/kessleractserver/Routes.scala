@@ -1,41 +1,34 @@
 package io.github.markusa380.kessleractserver
 
 import cats.effect.IO
-import cats.effect.kernel.Ref
-import io.circe._
-import io.github.markusa380.kessleractserver.model._
-import org.http4s._
-import org.http4s.dsl.io._
-import kessleract.pb.Service.*
-import scala.jdk.CollectionConverters._
 import com.google.protobuf.GeneratedMessage
 import com.google.protobuf.util.JsonFormat
+import io.circe._
+import io.github.markusa380.kessleractserver.model._
+import kessleract.pb.Service._
+import org.http4s._
+import org.http4s.dsl.io._
 
-class Routes(vesselDatabase: Ref[IO, HashedVesselCollection]):
+import scala.jdk.CollectionConverters._
+
+class Routes(vesselRepo: VesselRepository):
 
   def download(request: DownloadRequest): IO[DownloadResponse] = for {
-    vesselsCollection <- vesselDatabase.get
-
-    vessels = vesselsCollection
-      .getOrElse(request.getBody(), Map.empty)
-      .iterator
-      .filter { case (hash, _) => !request.getExcludedHashesList().contains(hash) }
-      .map { case (hash, vessel) => UniqueVesselSpec.newBuilder().setHash(hash).setVessel(vessel).build() }
-      .take(request.getTake())
-      .toList
-
-  } yield DownloadResponse.newBuilder().addAllVessels(vessels.asJava).build()
-
-  def upload(request: UploadRequest): IO[Unit] = for {
-    db <- vesselDatabase.updateAndGet(collection =>
-      val hash           = vesselHash(request.getVessel())
-      val body           = request.getBody()
-      val vessels        = collection.getOrElse(body, Map.empty)
-      val updatedVessels = vessels.updated(hash, request.getVessel())
-      collection.updated(body, updatedVessels)
+    vessels <- vesselRepo.getVessels(
+      request.getBody(),
+      request.getExcludedHashesList().asScala.toList.map(_.toInt),
+      request.getTake()
     )
-    _ <- persist(db)
-  } yield ()
+    uniqueVessels = vessels.map { case (hash, vessel) =>
+      UniqueVesselSpec.newBuilder().setHash(hash).setVessel(vessel).build()
+    }
+  } yield DownloadResponse.newBuilder().addAllVessels(uniqueVessels.asJava).build()
+
+  def upload(request: UploadRequest): IO[Unit] = {
+    val hash = vesselHash(request.getVessel())
+    val body = request.getBody()
+    vesselRepo.upsertVessel(body, hash, request.getVessel())
+  }
 
   val routes: HttpRoutes[IO] =
     HttpRoutes.of[IO] {
@@ -43,22 +36,24 @@ class Routes(vesselDatabase: Ref[IO, HashedVesselCollection]):
         for {
           req <- req
             .as[DownloadRequest]
-            .onError(logDecodingErrors)
+            .onError { case e => logDecodingErrors(e) }
           resp <- download(req)
+            .onError { case e => IO(println(s"Error while processing download request: $e")) }
           resp <- Ok(resp)
         } yield resp
       case req @ POST -> Root / "upload" =>
         for {
           req <- req
             .as[UploadRequest]
-            .onError(logDecodingErrors)
-          resp <- upload(req)
+            .onError { case e => logDecodingErrors(e) }
+          _    <- upload(req)
+            .onError { case e => IO(println(s"Error while processing upload request: $e")) }
           resp <- Ok()
         } yield resp
     }
 
   def logDecodingErrors(error: Throwable): IO[Unit] = error match {
-    case _: DecodingFailure => IO(println(s"Error while decoding upload request: $error"))
+    case _: DecodingFailure => IO(println(s"Error while decoding request: $error"))
     case _                  => IO.unit
   }
 
@@ -78,5 +73,3 @@ class Routes(vesselDatabase: Ref[IO, HashedVesselCollection]):
 
   implicit def responseEncoder[A <: GeneratedMessage]: EntityEncoder[IO, A] =
     EntityEncoder[IO, String].contramap[A](msg => JsonFormat.printer().print(msg))
-
-  

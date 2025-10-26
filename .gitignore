@@ -9,5 +9,7 @@
 .vscode
 target
 metals.sbt
+sbt-launch.jar
+.bloop/
 
 tools/

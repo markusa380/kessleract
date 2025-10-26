@@ -1,7 +1,6 @@
 package io.github.markusa380.kessleractserver
 
 import cats.effect.IO
-import cats.effect.kernel.Ref
 import com.comcast.ip4s._
 import io.github.markusa380.kessleractserver.model._
 import org.http4s.ember.client.EmberClientBuilder
@@ -14,10 +13,11 @@ object Server:
 
   def run: IO[Nothing] =
     (for {
-      client         <- EmberClientBuilder.default[IO].build
-      loaded         <- load.toResource
-      vesselDatabase <- Ref.of[IO, HashedVesselCollection](loaded).toResource
-      httpApp = Routes(vesselDatabase).routes.orNotFound
+      client <- EmberClientBuilder.default[IO].build
+      _      <- Database.migrate.toResource
+      tx     <- Database.transactor
+      vesselDatabase = VesselRepository(tx)
+      httpApp        = Routes(vesselDatabase).routes.orNotFound
 
       // With Middlewares in place
       finalHttpApp = Logger.httpApp(true, true)(
