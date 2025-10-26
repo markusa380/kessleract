@@ -22,23 +22,33 @@ namespace Kessleract {
             Instance = this;
         }
 
-        double timeSinceUpload = 60.0;
+        double timeSinceUpload = 0.0;
+        double timeSinceDownload = 0.0;
 
         public void Update() {
             timeSinceUpload += Time.deltaTime;
+            timeSinceDownload += Time.deltaTime;
 
-            /*
-            if (timeSinceUpload > 60.0) {
+
+            if (timeSinceUpload > KessleractConfig.Instance.UploadIntervalSeconds) {
                 timeSinceUpload = 0.0;
                 if (FlightGlobals.ActiveVessel != null && allowableSituations.Contains(FlightGlobals.ActiveVessel.situation)) {
-                    StartCoroutine(UploadCurrentVehicle());
-                    StartCoroutine(DownloadAbandonedVehicles());
+                    if (KessleractConfig.Instance.UploadEnabled) {
+                        StartUploadCurrentVehicle();
+                    }
+                }
+
+            }
+
+            if (timeSinceDownload > KessleractConfig.Instance.DownloadIntervalSeconds) {
+                timeSinceDownload = 0.0;
+                if (KessleractConfig.Instance.DownloadEnabled) {
+                    StartDownloadAbandonedVehicles();
                 }
                 else {
                     Log.Info("Not uploading vehicle because it is not in a valid situation");
                 }
             }
-            */
         }
 
         public void StartUploadCurrentVehicle() {
@@ -64,7 +74,7 @@ namespace Kessleract {
             };
             var requestBodyJson = JsonFormatter.Default.Format(requestBody);
 
-            var request = new UnityWebRequest("http://localhost:8080/upload", "POST");
+            var request = new UnityWebRequest(KessleractConfig.Instance.ServerUrl + "/upload", "POST");
             byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBodyJson);
             request.uploadHandler = new UploadHandlerRaw(bodyRaw);
             request.downloadHandler = new DownloadHandlerBuffer();
@@ -80,8 +90,6 @@ namespace Kessleract {
 
             Log.Info("Upload of active vessel complete");
         }
-
-        static readonly int MAX_COUNT_PER_BODY = 5;
 
         private IEnumerator DownloadAbandonedVehiclesCoroutine() {
             Log.Info("Downloading abandoned vehicles");
@@ -111,7 +119,7 @@ namespace Kessleract {
                     }
                 });
 
-                var take = Math.Max(0, MAX_COUNT_PER_BODY - nonAbandonedVesselsCount);
+                var take = Math.Max(0, KessleractConfig.Instance.MaxAbandonedVehiclesPerBody - nonAbandonedVesselsCount);
 
                 var requestBody = new Pb.DownloadRequest {
                     Body = body.flightGlobalsIndex,
@@ -122,7 +130,7 @@ namespace Kessleract {
 
                 var requestBodyJson = JsonFormatter.Default.Format(requestBody);
 
-                var request = new UnityWebRequest("http://localhost:8080/download", "POST");
+                var request = new UnityWebRequest(KessleractConfig.Instance.ServerUrl + "/download", "POST");
                 byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBodyJson);
                 request.uploadHandler = new UploadHandlerRaw(bodyRaw);
                 request.downloadHandler = new DownloadHandlerBuffer();
@@ -168,9 +176,15 @@ namespace Kessleract {
                             continue;
                         }
 
-                        // Enable when ready
-                        // var lifeTime = 100 * 24 * 60 * 60;
-                        // protoVessel.discoveryInfo = ProtoVessel.CreateDiscoveryNode(DiscoveryLevels.Presence, UntrackedObjectClass.A, 0, lifeTime);
+                        if (KessleractConfig.Instance.DiscoveryModeEnabled) {
+                            var lifeTime = 100 * 24 * 60 * 60;
+                            protoVessel.discoveryInfo = ProtoVessel.CreateDiscoveryNode(
+                                DiscoveryLevels.Presence,
+                                UntrackedObjectClass.A,
+                                0,
+                                lifeTime
+                            );
+                        }
 
                         protoVessel.Load(HighLogic.CurrentGame.flightState);
                     }

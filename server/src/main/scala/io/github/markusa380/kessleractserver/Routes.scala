@@ -46,7 +46,7 @@ class Routes(vesselRepo: VesselRepository):
           req <- req
             .as[UploadRequest]
             .onError { case e => logDecodingErrors(e) }
-          _    <- upload(req)
+          _ <- upload(req)
             .onError { case e => IO(println(s"Error while processing upload request: $e")) }
           resp <- Ok()
         } yield resp

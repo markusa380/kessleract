@@ -1,0 +1,42 @@
+version: '3.8'
+services:
+  server:
+    image: kessleract-server:latest
+     labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=servernet"
+      - "traefik.http.routers.kessleract.rule=Host(`kessleract.click`)"
+      - "traefik.http.routers.kessleract.entrypoints=websecure"
+      - "traefik.http.routers.kessleract.tls.certresolver=myresolver"
+      - "traefik.http.services.kessleract.loadbalancer.server.port=3003"
+      - "traefik.http.middlewares.ratelimiter.ratelimit.average=10"
+      - "traefik.http.middlewares.ratelimiter.ratelimit.period=1m"
+      - "traefik.http.middlewares.ratelimiter.ratelimit.burst=20"
+    container_name: kessleract_server
+    depends_on:
+      - db
+    environment:
+      DB_URL: jdbc:postgresql://db:5432/kessleract
+      DB_USER: kessleract
+      DB_PASSWORD: kessleract
+      PORT: 3003
+  db:
+    image: postgres:18
+    environment:
+      POSTGRES_DB: kessleract
+      POSTGRES_USER: kessleract
+      POSTGRES_PASSWORD: kessleract
+    volumes:
+      - db_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U exdiv"]
+      interval: 2s
+      timeout: 5s
+      retries: 10
+
+networks:
+  servernet:
+    external: true
+
+volumes:
+  db_data:

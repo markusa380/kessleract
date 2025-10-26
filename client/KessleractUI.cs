@@ -47,12 +47,38 @@ namespace Kessleract {
 
         public void OnGUI() {
             if (IsShown()) {
-                rect = GUILayout.Window(mainGuid, rect, WindowFunction, "Kessleract Debug");
+                rect = GUILayout.Window(mainGuid, rect, WindowFunction, "Kessleract");
             }
         }
 
         private void WindowFunction(int windowID) {
             GUILayout.BeginVertical();
+
+            var config = KessleractConfig.Instance;
+
+            GUILayout.Label("Server URL:");
+            config.ServerUrl = GUILayout.TextField(config.ServerUrl);
+
+            GUILayout.Label("Upload Interval (seconds):");
+            double.TryParse(GUILayout.TextField(config.UploadIntervalSeconds.ToString()), out double uploadInterval);
+            config.UploadIntervalSeconds = uploadInterval;
+
+            config.UploadEnabled = GUILayout.Toggle(config.UploadEnabled, "Enable Upload");
+
+            GUILayout.Label("Download Interval (seconds):");
+            double.TryParse(GUILayout.TextField(config.DownloadIntervalSeconds.ToString()), out double downloadInterval);
+            config.DownloadIntervalSeconds = downloadInterval;
+
+            config.DownloadEnabled = GUILayout.Toggle(config.DownloadEnabled, "Enable Download");
+
+            config.DiscoveryModeEnabled = GUILayout.Toggle(config.DiscoveryModeEnabled, "Enable Discovery Mode");
+
+            GUILayout.Label("Max Abandoned Vehicles Per Body:");
+            int.TryParse(GUILayout.TextField(config.MaxAbandonedVehiclesPerBody.ToString()), out int maxAbandoned);
+            config.MaxAbandonedVehiclesPerBody = maxAbandoned;
+
+            GUILayout.Label("Manual Actions:");
+
             if (GUILayout.Button("Upload Active Vessel")) {
                 Client.Instance.StartUploadCurrentVehicle();
             }

@@ -11,6 +11,8 @@ import org.http4s.server.middleware.Logger
 
 object Server:
 
+  lazy val port = sys.env.get("PORT").getOrElse("8080").toInt
+
   def run: IO[Nothing] =
     (for {
       client <- EmberClientBuilder.default[IO].build
@@ -28,7 +30,7 @@ object Server:
         EmberServerBuilder
           .default[IO]
           .withHost(ipv4"0.0.0.0")
-          .withPort(port"8080")
+          .withPort(Port.fromInt(port).get)
           .withHttpApp(finalHttpApp)
           .build
     } yield ()).useForever
