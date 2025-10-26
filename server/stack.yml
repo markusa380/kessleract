@@ -8,7 +8,7 @@ services:
       - "traefik.http.routers.kessleract.rule=Host(`kessleract.click`)"
       - "traefik.http.routers.kessleract.entrypoints=websecure"
       - "traefik.http.routers.kessleract.tls.certresolver=myresolver"
-      - "traefik.http.services.kessleract.loadbalancer.server.port=3003"
+      - "traefik.http.services.kessleract.loadbalancer.server.port=8080"
       - "traefik.http.middlewares.ratelimiter.ratelimit.average=10"
       - "traefik.http.middlewares.ratelimiter.ratelimit.period=1m"
       - "traefik.http.middlewares.ratelimiter.ratelimit.burst=20"
@@ -19,7 +19,7 @@ services:
       DB_URL: jdbc:postgresql://db:5432/kessleract
       DB_USER: kessleract
       DB_PASSWORD: kessleract
-      PORT: 3003
+      PORT: 8080
     networks:
       - servernet
       - default
