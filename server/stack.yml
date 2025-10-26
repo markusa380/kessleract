@@ -8,10 +8,11 @@ services:
       - "traefik.http.routers.kessleract.rule=Host(`kessleract.click`)"
       - "traefik.http.routers.kessleract.entrypoints=websecure"
       - "traefik.http.routers.kessleract.tls.certresolver=myresolver"
+      - "traefik.http.routers.kessleract.middlewares=kessleract-ratelimit"
       - "traefik.http.services.kessleract.loadbalancer.server.port=8080"
-      - "traefik.http.middlewares.ratelimiter.ratelimit.average=10"
-      - "traefik.http.middlewares.ratelimiter.ratelimit.period=1m"
-      - "traefik.http.middlewares.ratelimiter.ratelimit.burst=20"
+      - "traefik.http.middlewares.kessleract-ratelimit.ratelimit.average=10"
+      - "traefik.http.middlewares.kessleract-ratelimit.ratelimit.period=1m"
+      - "traefik.http.middlewares.kessleract-ratelimit.ratelimit.burst=20"
     depends_on:
       - db
     environment:
