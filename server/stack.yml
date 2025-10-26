@@ -20,6 +20,9 @@ services:
       DB_USER: kessleract
       DB_PASSWORD: kessleract
       PORT: 3003
+    networks:
+      - servernet
+      - default
   db:
     image: postgres:18
     environment:
