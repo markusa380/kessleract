@@ -29,9 +29,6 @@
     <Reference Include="UnityEngine.UnityWebRequestModule">
       <HintPath>$(ManagedPath)\UnityEngine.UnityWebRequestModule.dll</HintPath>
     </Reference>
-    <Reference Include="UnityEngine.JSONSerializeModule">
-      <HintPath>$(ManagedPath)\UnityEngine.JSONSerializeModule.dll</HintPath>
-    </Reference>
   </ItemGroup>
   <ItemGroup>
     <!-- Any version after 3.10.1 depends on System.Memory and is unusable for us -->

@@ -1,9 +1,10 @@
-# Commands
-
 ## Protobuf
 Run `build_proto.bat` to generate C# and Java classes from the .proto files. It will automatically download the required version of `protoc` if not already present.
 
 ## Client
+### Setup
+In KessleractClient.csproj, replace the value of the `KSPBasePath` property with the path to your KSP installation.
+
 From within the `client` directory, run:
 
 - `dotnet build` to build the client application.

@@ -6,9 +6,9 @@ using static KSP.UI.Screens.ApplicationLauncher;
 namespace Kessleract {
 
     [KSPAddon(KSPAddon.Startup.Flight, false)]
-    public class DebugInterface : MonoBehaviour {
+    public class KessleractUI : MonoBehaviour {
 
-        public static DebugInterface Instance { get; private set; }
+        public static KessleractUI Instance { get; private set; }
 
         // false when entire UI is hidden by pressing F2
         private bool visible = true;
