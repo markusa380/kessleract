@@ -37,16 +37,12 @@ namespace Kessleract {
                         StartUploadCurrentVehicle();
                     }
                 }
-
             }
 
             if (timeSinceDownload > KessleractConfig.Instance.DownloadIntervalSeconds) {
                 timeSinceDownload = 0.0;
                 if (KessleractConfig.Instance.DownloadEnabled) {
                     StartDownloadAbandonedVehicles();
-                }
-                else {
-                    Log.Info("Not uploading vehicle because it is not in a valid situation");
                 }
             }
         }
@@ -57,6 +53,12 @@ namespace Kessleract {
 
         public void StartDownloadAbandonedVehicles() {
             StartCoroutine(DownloadAbandonedVehiclesCoroutine());
+        }
+
+        public void StartVoteOnVessel(Vessel vessel, bool upvote) {
+            var vesselHash = Naming.GetVesselHash(vessel);
+            var body = vessel.mainBody.flightGlobalsIndex;
+            StartCoroutine(VoteOnVesselCoroutine(vesselHash, body, upvote));
         }
 
         private IEnumerator UploadCurrentVehicleCoroutine() {
@@ -190,6 +192,33 @@ namespace Kessleract {
 
                 }
             }
+        }
+
+        private IEnumerator VoteOnVesselCoroutine(int vesselHash, int body, bool upvote) {
+            Log.Info($"Voting on vessel {vesselHash}, upvote: {upvote}");
+
+            var requestBody = new Pb.VoteRequest {
+                Body = body,
+                VesselHash = vesselHash,
+                Upvote = upvote
+            };
+            var requestBodyJson = JsonFormatter.Default.Format(requestBody);
+
+            var request = new UnityWebRequest(KessleractConfig.Instance.ServerUrl + "/vote", "POST");
+            byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBodyJson);
+            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
+            request.downloadHandler = new DownloadHandlerBuffer();
+            request.SetRequestHeader("Content-Type", "application/json");
+            yield return request.SendWebRequest();
+
+            if (request.isNetworkError) {
+                Log.Info("Error while voting on vessel: " + request.error);
+            }
+            else if (request.responseCode != 200) {
+                Log.Info("Unexpected response code while voting on vessel: " + request.responseCode);
+            }
+
+            Log.Info("Vote on vessel complete");
         }
     }
 }

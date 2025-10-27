@@ -13,22 +13,34 @@ import org.typelevel.ci.CIStringSyntax
 import scala.jdk.CollectionConverters._
 
 class Routes(vesselRepo: VesselRepository):
-
-  def download(request: DownloadRequest): IO[DownloadResponse] = for {
-    vessels <- vesselRepo.getVessels(
-      request.getBody(),
-      request.getExcludedHashesList().asScala.toList.map(_.toInt),
-      request.getTake()
+  implicit val voteRequestDecoder: EntityDecoder[IO, VoteRequest] =
+    EntityDecoder[IO, String].map(raw =>
+      val builder = VoteRequest.newBuilder()
+      JsonFormat.parser().merge(raw, builder)
+      builder.build()
     )
-    uniqueVessels = vessels
-      .map { case (hash, vessel) =>
-        UniqueVesselSpec.newBuilder().setHash(hash).setVessel(vessel).build()
-      }
-      .take(Math.min(request.getTake, 10))
-  } yield DownloadResponse
-    .newBuilder()
-    .addAllVessels(uniqueVessels.asJava)
-    .build()
+  def vote(request: VoteRequest, ip: String): IO[Unit] =
+    val vesselHash = request.getVesselHash()
+    val body = request.getBody()
+    val voteValue = if request.getUpvote() then 1 else -1
+    vesselRepo.upsertVote(ip, vesselHash, body, voteValue)
+
+  def downloadWithVotes(request: DownloadRequest): IO[DownloadResponse] =
+    for
+      vesselsWithVotes <- vesselRepo.getVesselsWithVotes(
+        request.getBody(),
+        request.getExcludedHashesList().asScala.toList.map(_.toInt),
+        request.getTake()
+      )
+      uniqueVessels = vesselsWithVotes
+        .map { case (hash, vessel, score) =>
+          UniqueVesselSpec.newBuilder().setHash(hash).setVessel(vessel).build()
+        }
+        .take(Math.min(request.getTake, 10))
+    yield DownloadResponse
+      .newBuilder()
+      .addAllVessels(uniqueVessels.asJava)
+      .build()
 
   def upload(request: UploadRequest): IO[Unit] = {
     val hash = vesselHash(request.getVessel())
@@ -41,14 +53,14 @@ class Routes(vesselRepo: VesselRepository):
       case req @ POST -> Root / "download" =>
         val ip = getIp(req)
         println(s"Received download request from IP: $ip")
-        for {
+        for
           req <- req
             .as[DownloadRequest]
             .onError { case e => logDecodingErrors(e) }
-          resp <- download(req)
+          resp <- downloadWithVotes(req)
             .onError { case e => IO(println(s"Error while processing download request: $e")) }
           resp <- Ok(resp)
-        } yield resp
+        yield resp
       case req @ POST -> Root / "upload" =>
         for {
           req <- req
@@ -56,6 +68,16 @@ class Routes(vesselRepo: VesselRepository):
             .onError { case e => logDecodingErrors(e) }
           _ <- upload(req)
             .onError { case e => IO(println(s"Error while processing upload request: $e")) }
+          resp <- Ok()
+        } yield resp
+      case req @ POST -> Root / "vote" =>
+        val ip = getIp(req).getOrElse("unknown")
+        for {
+          voteReq <- req
+            .as[VoteRequest]
+            .onError { case e => logDecodingErrors(e) }
+          _ <- vote(voteReq, ip)
+            .onError { case e => IO(println(s"Error while processing vote request: $e")) }
           resp <- Ok()
         } yield resp
     }

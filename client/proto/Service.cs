@@ -32,7 +32,8 @@ namespace Kessleract.Pb {
             "KAUiRAoQRG93bmxvYWRSZXNwb25zZRIwCgd2ZXNzZWxzGAEgAygLMh8ua2Vz",
             "c2xlcmFjdC5wYi5VbmlxdWVWZXNzZWxTcGVjIksKEFVuaXF1ZVZlc3NlbFNw",
             "ZWMSKQoGdmVzc2VsGAEgASgLMhkua2Vzc2xlcmFjdC5wYi5WZXNzZWxTcGVj",
-            "EgwKBGhhc2gYAiABKAViBnByb3RvMw=="));
+            "EgwKBGhhc2gYAiABKAUiQAoLVm90ZVJlcXVlc3QSDAoEYm9keRgBIAEoBRIT",
+            "Cgt2ZXNzZWxfaGFzaBgCIAEoBRIOCgZ1cHZvdGUYAyABKAhiBnByb3RvMw=="));
       descriptor = pbr::FileDescriptor.FromGeneratedCode(descriptorData,
           new pbr::FileDescriptor[] { global::Kessleract.Pb.MessagesReflection.Descriptor, },
           new pbr::GeneratedClrTypeInfo(null, new pbr::GeneratedClrTypeInfo[] {
@@ -40,7 +41,8 @@ namespace Kessleract.Pb {
             new pbr::GeneratedClrTypeInfo(typeof(global::Kessleract.Pb.UploadResponse), global::Kessleract.Pb.UploadResponse.Parser, new[]{ "Success" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Kessleract.Pb.DownloadRequest), global::Kessleract.Pb.DownloadRequest.Parser, new[]{ "Body", "ExcludedHashes", "Take" }, null, null, null),
             new pbr::GeneratedClrTypeInfo(typeof(global::Kessleract.Pb.DownloadResponse), global::Kessleract.Pb.DownloadResponse.Parser, new[]{ "Vessels" }, null, null, null),
-            new pbr::GeneratedClrTypeInfo(typeof(global::Kessleract.Pb.UniqueVesselSpec), global::Kessleract.Pb.UniqueVesselSpec.Parser, new[]{ "Vessel", "Hash" }, null, null, null)
+            new pbr::GeneratedClrTypeInfo(typeof(global::Kessleract.Pb.UniqueVesselSpec), global::Kessleract.Pb.UniqueVesselSpec.Parser, new[]{ "Vessel", "Hash" }, null, null, null),
+            new pbr::GeneratedClrTypeInfo(typeof(global::Kessleract.Pb.VoteRequest), global::Kessleract.Pb.VoteRequest.Parser, new[]{ "Body", "VesselHash", "Upvote" }, null, null, null)
           }));
     }
     #endregion
@@ -793,6 +795,191 @@ namespace Kessleract.Pb {
           }
           case 16: {
             Hash = input.ReadInt32();
+            break;
+          }
+        }
+      }
+    }
+
+  }
+
+  public sealed partial class VoteRequest : pb::IMessage<VoteRequest> {
+    private static readonly pb::MessageParser<VoteRequest> _parser = new pb::MessageParser<VoteRequest>(() => new VoteRequest());
+    private pb::UnknownFieldSet _unknownFields;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pb::MessageParser<VoteRequest> Parser { get { return _parser; } }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public static pbr::MessageDescriptor Descriptor {
+      get { return global::Kessleract.Pb.ServiceReflection.Descriptor.MessageTypes[5]; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    pbr::MessageDescriptor pb::IMessage.Descriptor {
+      get { return Descriptor; }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public VoteRequest() {
+      OnConstruction();
+    }
+
+    partial void OnConstruction();
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public VoteRequest(VoteRequest other) : this() {
+      body_ = other.body_;
+      vesselHash_ = other.vesselHash_;
+      upvote_ = other.upvote_;
+      _unknownFields = pb::UnknownFieldSet.Clone(other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public VoteRequest Clone() {
+      return new VoteRequest(this);
+    }
+
+    /// <summary>Field number for the "body" field.</summary>
+    public const int BodyFieldNumber = 1;
+    private int body_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int Body {
+      get { return body_; }
+      set {
+        body_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "vessel_hash" field.</summary>
+    public const int VesselHashFieldNumber = 2;
+    private int vesselHash_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int VesselHash {
+      get { return vesselHash_; }
+      set {
+        vesselHash_ = value;
+      }
+    }
+
+    /// <summary>Field number for the "upvote" field.</summary>
+    public const int UpvoteFieldNumber = 3;
+    private bool upvote_;
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Upvote {
+      get { return upvote_; }
+      set {
+        upvote_ = value;
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override bool Equals(object other) {
+      return Equals(other as VoteRequest);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public bool Equals(VoteRequest other) {
+      if (ReferenceEquals(other, null)) {
+        return false;
+      }
+      if (ReferenceEquals(other, this)) {
+        return true;
+      }
+      if (Body != other.Body) return false;
+      if (VesselHash != other.VesselHash) return false;
+      if (Upvote != other.Upvote) return false;
+      return Equals(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override int GetHashCode() {
+      int hash = 1;
+      if (Body != 0) hash ^= Body.GetHashCode();
+      if (VesselHash != 0) hash ^= VesselHash.GetHashCode();
+      if (Upvote != false) hash ^= Upvote.GetHashCode();
+      if (_unknownFields != null) {
+        hash ^= _unknownFields.GetHashCode();
+      }
+      return hash;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public override string ToString() {
+      return pb::JsonFormatter.ToDiagnosticString(this);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void WriteTo(pb::CodedOutputStream output) {
+      if (Body != 0) {
+        output.WriteRawTag(8);
+        output.WriteInt32(Body);
+      }
+      if (VesselHash != 0) {
+        output.WriteRawTag(16);
+        output.WriteInt32(VesselHash);
+      }
+      if (Upvote != false) {
+        output.WriteRawTag(24);
+        output.WriteBool(Upvote);
+      }
+      if (_unknownFields != null) {
+        _unknownFields.WriteTo(output);
+      }
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public int CalculateSize() {
+      int size = 0;
+      if (Body != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(Body);
+      }
+      if (VesselHash != 0) {
+        size += 1 + pb::CodedOutputStream.ComputeInt32Size(VesselHash);
+      }
+      if (Upvote != false) {
+        size += 1 + 1;
+      }
+      if (_unknownFields != null) {
+        size += _unknownFields.CalculateSize();
+      }
+      return size;
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(VoteRequest other) {
+      if (other == null) {
+        return;
+      }
+      if (other.Body != 0) {
+        Body = other.Body;
+      }
+      if (other.VesselHash != 0) {
+        VesselHash = other.VesselHash;
+      }
+      if (other.Upvote != false) {
+        Upvote = other.Upvote;
+      }
+      _unknownFields = pb::UnknownFieldSet.MergeFrom(_unknownFields, other._unknownFields);
+    }
+
+    [global::System.Diagnostics.DebuggerNonUserCodeAttribute]
+    public void MergeFrom(pb::CodedInputStream input) {
+      uint tag;
+      while ((tag = input.ReadTag()) != 0) {
+        switch(tag) {
+          default:
+            _unknownFields = pb::UnknownFieldSet.MergeFieldFrom(_unknownFields, input);
+            break;
+          case 8: {
+            Body = input.ReadInt32();
+            break;
+          }
+          case 16: {
+            VesselHash = input.ReadInt32();
+            break;
+          }
+          case 24: {
+            Upvote = input.ReadBool();
             break;
           }
         }

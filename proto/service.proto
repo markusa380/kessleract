@@ -27,3 +27,9 @@ message UniqueVesselSpec {
     VesselSpec vessel = 1;
     int32 hash = 2;
 }
+
+message VoteRequest {
+    int32 body = 1;
+    int32 vessel_hash = 2;
+    bool upvote = 3;
+}

@@ -14,12 +14,20 @@ namespace Kessleract {
         private bool visible = true;
 
         // true when the window is opened from the toolbar
-        private bool open = false;
+        private bool open = false; // primary UI open from toolbar
+
+        // true when the settings window is opened
+        private bool settingsOpen = false;
 
         private ApplicationLauncherButton toolbarButton;
         private readonly int mainGuid = Guid.NewGuid().GetHashCode();
-        private Rect rect = new Rect(100, 100, 200, 100);
+        private readonly int settingsGuid = Guid.NewGuid().GetHashCode();
+        private Rect mainRect = new Rect(100, 100, 200, 100);
+        private Rect settingsRect = new Rect(100, 100, 200, 100);
         private bool showAdvancedSettings = false;
+
+        private readonly Texture settingsIcon = GameDatabase.Instance.GetTexture("KessleractClient/Textures/options_w", false);
+        private readonly Texture closeIcon = GameDatabase.Instance.GetTexture("KessleractClient/Textures/close_w", false);
 
         public void Start() {
             GameEvents.onShowUI.Add(OnShowUI);
@@ -46,14 +54,63 @@ namespace Kessleract {
             return visible && open;
         }
 
+        private bool IsSettingsShown() {
+            return visible && settingsOpen;
+        }
+
         public void OnGUI() {
             if (IsShown()) {
-                rect = GUILayout.Window(mainGuid, rect, WindowFunction, "Kessleract");
+                mainRect = GUILayout.Window(mainGuid, mainRect, MainWindowFunction, "Kessleract");
+            }
+            if (IsSettingsShown()) {
+                settingsRect = GUILayout.Window(settingsGuid, settingsRect, SettingsWindowFunction, "Kessleract Settings");
             }
         }
 
-        private void WindowFunction(int windowID) {
+        private void MainWindowFunction(int windowID) {
             GUILayout.BeginVertical();
+            GUILayout.FlexibleSpace();
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button(settingsIcon, GUILayout.Width(24), GUILayout.Height(24))) {
+                settingsOpen = true;
+            }
+            GUILayout.EndHorizontal();
+
+            GUILayout.Label("Abandoned Vessels:");
+
+            var numAbandonedVessels = 0;
+            foreach (var vessel in FlightGlobals.VesselsLoaded) {
+                if (Naming.GetVesselHash(vessel) != -1) {
+                    numAbandonedVessels++;
+                    GUILayout.Label($"Vessel: {vessel.vesselName}");
+                    GUILayout.BeginHorizontal();
+                    if (GUILayout.Button("Upvote")) {
+                        Client.Instance.StartVoteOnVessel(vessel, true);
+                    }
+                    if (GUILayout.Button("Downvote")) {
+                        Client.Instance.StartVoteOnVessel(vessel, false);
+                    }
+                    GUILayout.EndHorizontal();
+                }
+            }
+
+            if (numAbandonedVessels == 0) {
+                GUILayout.Label("No abandoned vessels currently loaded.");
+            }
+
+            GUILayout.EndVertical();
+            GUI.DragWindow();
+        }
+
+        private void SettingsWindowFunction(int windowID) {
+            GUILayout.BeginVertical();
+            GUILayout.BeginHorizontal();
+            GUILayout.FlexibleSpace();
+            if (GUILayout.Button(closeIcon, GUILayout.Width(24), GUILayout.Height(24))) {
+                settingsOpen = false;
+            }
+            GUILayout.EndHorizontal();
 
             var config = KessleractConfig.Instance;
 
@@ -99,6 +156,14 @@ namespace Kessleract {
                 if (GUILayout.Button("Download Abandoned Vehicles")) {
                     Client.Instance.StartDownloadAbandonedVehicles();
                 }
+                if (GUILayout.Button("Delete All Abandoned Vehicles")) {
+                    foreach (var vessel in FlightGlobals.Vessels) {
+                        var vesselHash = Naming.GetVesselHash(vessel);
+                        if (vesselHash != -1) {
+                            vessel.Die();
+                        }
+                    }
+                }
             }
             GUILayout.EndVertical();
             GUI.DragWindow();
@@ -110,6 +175,7 @@ namespace Kessleract {
 
         private void OnClose() {
             open = false;
+            settingsOpen = false;
         }
 
         private void OnShowUI() {

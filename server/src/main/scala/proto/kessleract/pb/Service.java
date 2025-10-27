@@ -3411,6 +3411,629 @@ public final class Service {
 
   }
 
+  public interface VoteRequestOrBuilder extends
+      // @@protoc_insertion_point(interface_extends:kessleract.pb.VoteRequest)
+      com.google.protobuf.MessageOrBuilder {
+
+    /**
+     * <code>int32 body = 1;</code>
+     * @return The body.
+     */
+    int getBody();
+
+    /**
+     * <code>int32 vessel_hash = 2;</code>
+     * @return The vesselHash.
+     */
+    int getVesselHash();
+
+    /**
+     * <code>bool upvote = 3;</code>
+     * @return The upvote.
+     */
+    boolean getUpvote();
+  }
+  /**
+   * Protobuf type {@code kessleract.pb.VoteRequest}
+   */
+  public  static final class VoteRequest extends
+      com.google.protobuf.GeneratedMessageV3 implements
+      // @@protoc_insertion_point(message_implements:kessleract.pb.VoteRequest)
+      VoteRequestOrBuilder {
+  private static final long serialVersionUID = 0L;
+    // Use VoteRequest.newBuilder() to construct.
+    private VoteRequest(com.google.protobuf.GeneratedMessageV3.Builder<?> builder) {
+      super(builder);
+    }
+    private VoteRequest() {
+    }
+
+    @java.lang.Override
+    @SuppressWarnings({"unused"})
+    protected java.lang.Object newInstance(
+        UnusedPrivateParameter unused) {
+      return new VoteRequest();
+    }
+
+    @java.lang.Override
+    public final com.google.protobuf.UnknownFieldSet
+    getUnknownFields() {
+      return this.unknownFields;
+    }
+    private VoteRequest(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      this();
+      if (extensionRegistry == null) {
+        throw new java.lang.NullPointerException();
+      }
+      com.google.protobuf.UnknownFieldSet.Builder unknownFields =
+          com.google.protobuf.UnknownFieldSet.newBuilder();
+      try {
+        boolean done = false;
+        while (!done) {
+          int tag = input.readTag();
+          switch (tag) {
+            case 0:
+              done = true;
+              break;
+            case 8: {
+
+              body_ = input.readInt32();
+              break;
+            }
+            case 16: {
+
+              vesselHash_ = input.readInt32();
+              break;
+            }
+            case 24: {
+
+              upvote_ = input.readBool();
+              break;
+            }
+            default: {
+              if (!parseUnknownField(
+                  input, unknownFields, extensionRegistry, tag)) {
+                done = true;
+              }
+              break;
+            }
+          }
+        }
+      } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+        throw e.setUnfinishedMessage(this);
+      } catch (java.io.IOException e) {
+        throw new com.google.protobuf.InvalidProtocolBufferException(
+            e).setUnfinishedMessage(this);
+      } finally {
+        this.unknownFields = unknownFields.build();
+        makeExtensionsImmutable();
+      }
+    }
+    public static final com.google.protobuf.Descriptors.Descriptor
+        getDescriptor() {
+      return kessleract.pb.Service.internal_static_kessleract_pb_VoteRequest_descriptor;
+    }
+
+    @java.lang.Override
+    protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+        internalGetFieldAccessorTable() {
+      return kessleract.pb.Service.internal_static_kessleract_pb_VoteRequest_fieldAccessorTable
+          .ensureFieldAccessorsInitialized(
+              kessleract.pb.Service.VoteRequest.class, kessleract.pb.Service.VoteRequest.Builder.class);
+    }
+
+    public static final int BODY_FIELD_NUMBER = 1;
+    private int body_;
+    /**
+     * <code>int32 body = 1;</code>
+     * @return The body.
+     */
+    public int getBody() {
+      return body_;
+    }
+
+    public static final int VESSEL_HASH_FIELD_NUMBER = 2;
+    private int vesselHash_;
+    /**
+     * <code>int32 vessel_hash = 2;</code>
+     * @return The vesselHash.
+     */
+    public int getVesselHash() {
+      return vesselHash_;
+    }
+
+    public static final int UPVOTE_FIELD_NUMBER = 3;
+    private boolean upvote_;
+    /**
+     * <code>bool upvote = 3;</code>
+     * @return The upvote.
+     */
+    public boolean getUpvote() {
+      return upvote_;
+    }
+
+    private byte memoizedIsInitialized = -1;
+    @java.lang.Override
+    public final boolean isInitialized() {
+      byte isInitialized = memoizedIsInitialized;
+      if (isInitialized == 1) return true;
+      if (isInitialized == 0) return false;
+
+      memoizedIsInitialized = 1;
+      return true;
+    }
+
+    @java.lang.Override
+    public void writeTo(com.google.protobuf.CodedOutputStream output)
+                        throws java.io.IOException {
+      if (body_ != 0) {
+        output.writeInt32(1, body_);
+      }
+      if (vesselHash_ != 0) {
+        output.writeInt32(2, vesselHash_);
+      }
+      if (upvote_ != false) {
+        output.writeBool(3, upvote_);
+      }
+      unknownFields.writeTo(output);
+    }
+
+    @java.lang.Override
+    public int getSerializedSize() {
+      int size = memoizedSize;
+      if (size != -1) return size;
+
+      size = 0;
+      if (body_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(1, body_);
+      }
+      if (vesselHash_ != 0) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeInt32Size(2, vesselHash_);
+      }
+      if (upvote_ != false) {
+        size += com.google.protobuf.CodedOutputStream
+          .computeBoolSize(3, upvote_);
+      }
+      size += unknownFields.getSerializedSize();
+      memoizedSize = size;
+      return size;
+    }
+
+    @java.lang.Override
+    public boolean equals(final java.lang.Object obj) {
+      if (obj == this) {
+       return true;
+      }
+      if (!(obj instanceof kessleract.pb.Service.VoteRequest)) {
+        return super.equals(obj);
+      }
+      kessleract.pb.Service.VoteRequest other = (kessleract.pb.Service.VoteRequest) obj;
+
+      if (getBody()
+          != other.getBody()) return false;
+      if (getVesselHash()
+          != other.getVesselHash()) return false;
+      if (getUpvote()
+          != other.getUpvote()) return false;
+      if (!unknownFields.equals(other.unknownFields)) return false;
+      return true;
+    }
+
+    @java.lang.Override
+    public int hashCode() {
+      if (memoizedHashCode != 0) {
+        return memoizedHashCode;
+      }
+      int hash = 41;
+      hash = (19 * hash) + getDescriptor().hashCode();
+      hash = (37 * hash) + BODY_FIELD_NUMBER;
+      hash = (53 * hash) + getBody();
+      hash = (37 * hash) + VESSEL_HASH_FIELD_NUMBER;
+      hash = (53 * hash) + getVesselHash();
+      hash = (37 * hash) + UPVOTE_FIELD_NUMBER;
+      hash = (53 * hash) + com.google.protobuf.Internal.hashBoolean(
+          getUpvote());
+      hash = (29 * hash) + unknownFields.hashCode();
+      memoizedHashCode = hash;
+      return hash;
+    }
+
+    public static kessleract.pb.Service.VoteRequest parseFrom(
+        java.nio.ByteBuffer data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static kessleract.pb.Service.VoteRequest parseFrom(
+        java.nio.ByteBuffer data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static kessleract.pb.Service.VoteRequest parseFrom(
+        com.google.protobuf.ByteString data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static kessleract.pb.Service.VoteRequest parseFrom(
+        com.google.protobuf.ByteString data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static kessleract.pb.Service.VoteRequest parseFrom(byte[] data)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data);
+    }
+    public static kessleract.pb.Service.VoteRequest parseFrom(
+        byte[] data,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws com.google.protobuf.InvalidProtocolBufferException {
+      return PARSER.parseFrom(data, extensionRegistry);
+    }
+    public static kessleract.pb.Service.VoteRequest parseFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static kessleract.pb.Service.VoteRequest parseFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static kessleract.pb.Service.VoteRequest parseDelimitedFrom(java.io.InputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input);
+    }
+    public static kessleract.pb.Service.VoteRequest parseDelimitedFrom(
+        java.io.InputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseDelimitedWithIOException(PARSER, input, extensionRegistry);
+    }
+    public static kessleract.pb.Service.VoteRequest parseFrom(
+        com.google.protobuf.CodedInputStream input)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input);
+    }
+    public static kessleract.pb.Service.VoteRequest parseFrom(
+        com.google.protobuf.CodedInputStream input,
+        com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+        throws java.io.IOException {
+      return com.google.protobuf.GeneratedMessageV3
+          .parseWithIOException(PARSER, input, extensionRegistry);
+    }
+
+    @java.lang.Override
+    public Builder newBuilderForType() { return newBuilder(); }
+    public static Builder newBuilder() {
+      return DEFAULT_INSTANCE.toBuilder();
+    }
+    public static Builder newBuilder(kessleract.pb.Service.VoteRequest prototype) {
+      return DEFAULT_INSTANCE.toBuilder().mergeFrom(prototype);
+    }
+    @java.lang.Override
+    public Builder toBuilder() {
+      return this == DEFAULT_INSTANCE
+          ? new Builder() : new Builder().mergeFrom(this);
+    }
+
+    @java.lang.Override
+    protected Builder newBuilderForType(
+        com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+      Builder builder = new Builder(parent);
+      return builder;
+    }
+    /**
+     * Protobuf type {@code kessleract.pb.VoteRequest}
+     */
+    public static final class Builder extends
+        com.google.protobuf.GeneratedMessageV3.Builder<Builder> implements
+        // @@protoc_insertion_point(builder_implements:kessleract.pb.VoteRequest)
+        kessleract.pb.Service.VoteRequestOrBuilder {
+      public static final com.google.protobuf.Descriptors.Descriptor
+          getDescriptor() {
+        return kessleract.pb.Service.internal_static_kessleract_pb_VoteRequest_descriptor;
+      }
+
+      @java.lang.Override
+      protected com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+          internalGetFieldAccessorTable() {
+        return kessleract.pb.Service.internal_static_kessleract_pb_VoteRequest_fieldAccessorTable
+            .ensureFieldAccessorsInitialized(
+                kessleract.pb.Service.VoteRequest.class, kessleract.pb.Service.VoteRequest.Builder.class);
+      }
+
+      // Construct using kessleract.pb.Service.VoteRequest.newBuilder()
+      private Builder() {
+        maybeForceBuilderInitialization();
+      }
+
+      private Builder(
+          com.google.protobuf.GeneratedMessageV3.BuilderParent parent) {
+        super(parent);
+        maybeForceBuilderInitialization();
+      }
+      private void maybeForceBuilderInitialization() {
+        if (com.google.protobuf.GeneratedMessageV3
+                .alwaysUseFieldBuilders) {
+        }
+      }
+      @java.lang.Override
+      public Builder clear() {
+        super.clear();
+        body_ = 0;
+
+        vesselHash_ = 0;
+
+        upvote_ = false;
+
+        return this;
+      }
+
+      @java.lang.Override
+      public com.google.protobuf.Descriptors.Descriptor
+          getDescriptorForType() {
+        return kessleract.pb.Service.internal_static_kessleract_pb_VoteRequest_descriptor;
+      }
+
+      @java.lang.Override
+      public kessleract.pb.Service.VoteRequest getDefaultInstanceForType() {
+        return kessleract.pb.Service.VoteRequest.getDefaultInstance();
+      }
+
+      @java.lang.Override
+      public kessleract.pb.Service.VoteRequest build() {
+        kessleract.pb.Service.VoteRequest result = buildPartial();
+        if (!result.isInitialized()) {
+          throw newUninitializedMessageException(result);
+        }
+        return result;
+      }
+
+      @java.lang.Override
+      public kessleract.pb.Service.VoteRequest buildPartial() {
+        kessleract.pb.Service.VoteRequest result = new kessleract.pb.Service.VoteRequest(this);
+        result.body_ = body_;
+        result.vesselHash_ = vesselHash_;
+        result.upvote_ = upvote_;
+        onBuilt();
+        return result;
+      }
+
+      @java.lang.Override
+      public Builder clone() {
+        return super.clone();
+      }
+      @java.lang.Override
+      public Builder setField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          java.lang.Object value) {
+        return super.setField(field, value);
+      }
+      @java.lang.Override
+      public Builder clearField(
+          com.google.protobuf.Descriptors.FieldDescriptor field) {
+        return super.clearField(field);
+      }
+      @java.lang.Override
+      public Builder clearOneof(
+          com.google.protobuf.Descriptors.OneofDescriptor oneof) {
+        return super.clearOneof(oneof);
+      }
+      @java.lang.Override
+      public Builder setRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          int index, java.lang.Object value) {
+        return super.setRepeatedField(field, index, value);
+      }
+      @java.lang.Override
+      public Builder addRepeatedField(
+          com.google.protobuf.Descriptors.FieldDescriptor field,
+          java.lang.Object value) {
+        return super.addRepeatedField(field, value);
+      }
+      @java.lang.Override
+      public Builder mergeFrom(com.google.protobuf.Message other) {
+        if (other instanceof kessleract.pb.Service.VoteRequest) {
+          return mergeFrom((kessleract.pb.Service.VoteRequest)other);
+        } else {
+          super.mergeFrom(other);
+          return this;
+        }
+      }
+
+      public Builder mergeFrom(kessleract.pb.Service.VoteRequest other) {
+        if (other == kessleract.pb.Service.VoteRequest.getDefaultInstance()) return this;
+        if (other.getBody() != 0) {
+          setBody(other.getBody());
+        }
+        if (other.getVesselHash() != 0) {
+          setVesselHash(other.getVesselHash());
+        }
+        if (other.getUpvote() != false) {
+          setUpvote(other.getUpvote());
+        }
+        this.mergeUnknownFields(other.unknownFields);
+        onChanged();
+        return this;
+      }
+
+      @java.lang.Override
+      public final boolean isInitialized() {
+        return true;
+      }
+
+      @java.lang.Override
+      public Builder mergeFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws java.io.IOException {
+        kessleract.pb.Service.VoteRequest parsedMessage = null;
+        try {
+          parsedMessage = PARSER.parsePartialFrom(input, extensionRegistry);
+        } catch (com.google.protobuf.InvalidProtocolBufferException e) {
+          parsedMessage = (kessleract.pb.Service.VoteRequest) e.getUnfinishedMessage();
+          throw e.unwrapIOException();
+        } finally {
+          if (parsedMessage != null) {
+            mergeFrom(parsedMessage);
+          }
+        }
+        return this;
+      }
+
+      private int body_ ;
+      /**
+       * <code>int32 body = 1;</code>
+       * @return The body.
+       */
+      public int getBody() {
+        return body_;
+      }
+      /**
+       * <code>int32 body = 1;</code>
+       * @param value The body to set.
+       * @return This builder for chaining.
+       */
+      public Builder setBody(int value) {
+        
+        body_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>int32 body = 1;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearBody() {
+        
+        body_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private int vesselHash_ ;
+      /**
+       * <code>int32 vessel_hash = 2;</code>
+       * @return The vesselHash.
+       */
+      public int getVesselHash() {
+        return vesselHash_;
+      }
+      /**
+       * <code>int32 vessel_hash = 2;</code>
+       * @param value The vesselHash to set.
+       * @return This builder for chaining.
+       */
+      public Builder setVesselHash(int value) {
+        
+        vesselHash_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>int32 vessel_hash = 2;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearVesselHash() {
+        
+        vesselHash_ = 0;
+        onChanged();
+        return this;
+      }
+
+      private boolean upvote_ ;
+      /**
+       * <code>bool upvote = 3;</code>
+       * @return The upvote.
+       */
+      public boolean getUpvote() {
+        return upvote_;
+      }
+      /**
+       * <code>bool upvote = 3;</code>
+       * @param value The upvote to set.
+       * @return This builder for chaining.
+       */
+      public Builder setUpvote(boolean value) {
+        
+        upvote_ = value;
+        onChanged();
+        return this;
+      }
+      /**
+       * <code>bool upvote = 3;</code>
+       * @return This builder for chaining.
+       */
+      public Builder clearUpvote() {
+        
+        upvote_ = false;
+        onChanged();
+        return this;
+      }
+      @java.lang.Override
+      public final Builder setUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.setUnknownFields(unknownFields);
+      }
+
+      @java.lang.Override
+      public final Builder mergeUnknownFields(
+          final com.google.protobuf.UnknownFieldSet unknownFields) {
+        return super.mergeUnknownFields(unknownFields);
+      }
+
+
+      // @@protoc_insertion_point(builder_scope:kessleract.pb.VoteRequest)
+    }
+
+    // @@protoc_insertion_point(class_scope:kessleract.pb.VoteRequest)
+    private static final kessleract.pb.Service.VoteRequest DEFAULT_INSTANCE;
+    static {
+      DEFAULT_INSTANCE = new kessleract.pb.Service.VoteRequest();
+    }
+
+    public static kessleract.pb.Service.VoteRequest getDefaultInstance() {
+      return DEFAULT_INSTANCE;
+    }
+
+    private static final com.google.protobuf.Parser<VoteRequest>
+        PARSER = new com.google.protobuf.AbstractParser<VoteRequest>() {
+      @java.lang.Override
+      public VoteRequest parsePartialFrom(
+          com.google.protobuf.CodedInputStream input,
+          com.google.protobuf.ExtensionRegistryLite extensionRegistry)
+          throws com.google.protobuf.InvalidProtocolBufferException {
+        return new VoteRequest(input, extensionRegistry);
+      }
+    };
+
+    public static com.google.protobuf.Parser<VoteRequest> parser() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public com.google.protobuf.Parser<VoteRequest> getParserForType() {
+      return PARSER;
+    }
+
+    @java.lang.Override
+    public kessleract.pb.Service.VoteRequest getDefaultInstanceForType() {
+      return DEFAULT_INSTANCE;
+    }
+
+  }
+
   private static final com.google.protobuf.Descriptors.Descriptor
     internal_static_kessleract_pb_UploadRequest_descriptor;
   private static final 
@@ -3436,6 +4059,11 @@ public final class Service {
   private static final 
     com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
       internal_static_kessleract_pb_UniqueVesselSpec_fieldAccessorTable;
+  private static final com.google.protobuf.Descriptors.Descriptor
+    internal_static_kessleract_pb_VoteRequest_descriptor;
+  private static final 
+    com.google.protobuf.GeneratedMessageV3.FieldAccessorTable
+      internal_static_kessleract_pb_VoteRequest_fieldAccessorTable;
 
   public static com.google.protobuf.Descriptors.FileDescriptor
       getDescriptor() {
@@ -3454,7 +4082,9 @@ public final class Service {
       "esponse\0220\n\007vessels\030\001 \003(\0132\037.kessleract.pb" +
       ".UniqueVesselSpec\"K\n\020UniqueVesselSpec\022)\n" +
       "\006vessel\030\001 \001(\0132\031.kessleract.pb.VesselSpec" +
-      "\022\014\n\004hash\030\002 \001(\005b\006proto3"
+      "\022\014\n\004hash\030\002 \001(\005\"@\n\013VoteRequest\022\014\n\004body\030\001 " +
+      "\001(\005\022\023\n\013vessel_hash\030\002 \001(\005\022\016\n\006upvote\030\003 \001(\010" +
+      "b\006proto3"
     };
     descriptor = com.google.protobuf.Descriptors.FileDescriptor
       .internalBuildGeneratedFileFrom(descriptorData,
@@ -3491,6 +4121,12 @@ public final class Service {
       com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
         internal_static_kessleract_pb_UniqueVesselSpec_descriptor,
         new java.lang.String[] { "Vessel", "Hash", });
+    internal_static_kessleract_pb_VoteRequest_descriptor =
+      getDescriptor().getMessageTypes().get(5);
+    internal_static_kessleract_pb_VoteRequest_fieldAccessorTable = new
+      com.google.protobuf.GeneratedMessageV3.FieldAccessorTable(
+        internal_static_kessleract_pb_VoteRequest_descriptor,
+        new java.lang.String[] { "Body", "VesselHash", "Upvote", });
     kessleract.pb.Messages.getDescriptor();
   }
 

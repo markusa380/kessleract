@@ -5,6 +5,7 @@
     <!-- Set this path to your KSP installation -->
     <KSPBasePath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program</KSPBasePath>
     <ManagedPath>$(KSPBasePath)\KSP_x64_Data\Managed</ManagedPath>
+    <TexturesPath>$(KSPBasePath)\GameData\KessleractClient\Textures</TexturesPath>
     <PluginsPath>$(KSPBasePath)\GameData\KessleractClient\Plugins</PluginsPath>
   </PropertyGroup>
   <ItemGroup>
@@ -34,8 +35,12 @@
     <!-- Any version after 3.10.1 depends on System.Memory and is unusable for us -->
     <PackageReference Include="Google.Protobuf" Version="3.10.1" />
   </ItemGroup>
+  <ItemGroup>
+    <Textures Include="Textures\*" />
+  </ItemGroup>
   <Target Name="PostBuild" AfterTargets="Build">
     <Copy SourceFiles="$(OutputPath)$(AssemblyName).dll" DestinationFolder="$(PluginsPath)" />
     <Copy SourceFiles="$(OutputPath)Google.Protobuf.dll" DestinationFolder="$(PluginsPath)" />
+    <Copy SourceFiles="@(Textures)" DestinationFolder="$(TexturesPath)" SkipUnchangedFiles="true" />
   </Target>
 </Project>

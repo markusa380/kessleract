@@ -39,6 +39,12 @@ namespace Kessleract {
             if (node.HasValue("MaxAbandonedVehiclesPerBody")) {
                 MaxAbandonedVehiclesPerBody = int.Parse(node.GetValue("MaxAbandonedVehiclesPerBody"));
             }
+            if (node.HasValue("LifeTime")) {
+                LifeTime = int.Parse(node.GetValue("LifeTime"));
+            }
+            if (node.HasValue("MaxLifeTime")) {
+                MaxLifeTime = int.Parse(node.GetValue("MaxLifeTime"));
+            }
         }
 
         public override void OnSave(ConfigNode node) {
@@ -49,6 +55,8 @@ namespace Kessleract {
             node.AddValue("DownloadEnabled", DownloadEnabled);
             node.AddValue("DiscoveryModeEnabled", DiscoveryModeEnabled);
             node.AddValue("MaxAbandonedVehiclesPerBody", MaxAbandonedVehiclesPerBody);
+            node.AddValue("LifeTime", LifeTime);
+            node.AddValue("MaxLifeTime", MaxLifeTime);
         }
 
         public static string Base64Encode(string plainText) {
