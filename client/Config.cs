@@ -7,7 +7,7 @@ namespace Kessleract {
       Instance = this;
     }
 
-    public string ServerUrl { get; set; } = "http://localhost:8080";
+    public string ServerUrl { get; set; } = "https://kessleract.click";
     public double UploadIntervalSeconds { get; set; } = 60.0;
     public bool UploadEnabled { get; set; } = false;
     public double DownloadIntervalSeconds { get; set; } = 300.0;
@@ -17,7 +17,7 @@ namespace Kessleract {
 
     public override void OnLoad(ConfigNode node) {
       if (node.HasValue("ServerUrl")) {
-        ServerUrl = node.GetValue("ServerUrl");
+        ServerUrl = Base64Decode(node.GetValue("ServerUrl"));
       }
       if (node.HasValue("UploadIntervalSeconds")) {
         UploadIntervalSeconds = double.Parse(node.GetValue("UploadIntervalSeconds"));
@@ -39,14 +39,25 @@ namespace Kessleract {
       }
     }
 
-		public override void OnSave(ConfigNode node) {
-      node.AddValue("ServerUrl", ServerUrl);
+    public override void OnSave(ConfigNode node) {
+      node.AddValue("ServerUrl", Base64Encode(ServerUrl));
       node.AddValue("UploadIntervalSeconds", UploadIntervalSeconds);
       node.AddValue("UploadEnabled", UploadEnabled);
       node.AddValue("DownloadIntervalSeconds", DownloadIntervalSeconds);
       node.AddValue("DownloadEnabled", DownloadEnabled);
       node.AddValue("DiscoveryModeEnabled", DiscoveryModeEnabled);
       node.AddValue("MaxAbandonedVehiclesPerBody", MaxAbandonedVehiclesPerBody);
+    }
+
+    public static string Base64Encode(string plainText) {
+      var plainTextBytes = System.Text.Encoding.UTF8.GetBytes(plainText);
+      return System.Convert.ToBase64String(plainTextBytes);
+    }
+    
+    public static string Base64Decode(string base64EncodedData) 
+    {
+      var base64EncodedBytes = System.Convert.FromBase64String(base64EncodedData);
+      return System.Text.Encoding.UTF8.GetString(base64EncodedBytes);
     }
   }
 }
