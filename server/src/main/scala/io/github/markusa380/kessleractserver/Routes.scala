@@ -9,6 +9,7 @@ import kessleract.pb.Service._
 import org.http4s._
 import org.http4s.dsl.io._
 
+import org.typelevel.ci.CIStringSyntax
 import scala.jdk.CollectionConverters._
 
 class Routes(vesselRepo: VesselRepository):
@@ -38,6 +39,8 @@ class Routes(vesselRepo: VesselRepository):
   val routes: HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case req @ POST -> Root / "download" =>
+        val ip = getIp(req)
+        println(s"Received download request from IP: $ip")
         for {
           req <- req
             .as[DownloadRequest]
@@ -61,6 +64,9 @@ class Routes(vesselRepo: VesselRepository):
     case _: DecodingFailure => IO(println(s"Error while decoding request: $error"))
     case _                  => IO.unit
   }
+
+  def getIp(request: Request[IO]) = request.headers.get(ci"X-Forwarded-For")
+    .map(_.head.value)
 
   implicit val downloadRequestDecoder: EntityDecoder[IO, DownloadRequest] =
     EntityDecoder[IO, String].map(raw =>
