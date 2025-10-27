@@ -19,10 +19,15 @@ class Routes(vesselRepo: VesselRepository):
       request.getExcludedHashesList().asScala.toList.map(_.toInt),
       request.getTake()
     )
-    uniqueVessels = vessels.map { case (hash, vessel) =>
-      UniqueVesselSpec.newBuilder().setHash(hash).setVessel(vessel).build()
-    }
-  } yield DownloadResponse.newBuilder().addAllVessels(uniqueVessels.asJava).build()
+    uniqueVessels = vessels
+      .map { case (hash, vessel) =>
+        UniqueVesselSpec.newBuilder().setHash(hash).setVessel(vessel).build()
+      }
+      .take(Math.min(request.getTake, 10))
+  } yield DownloadResponse
+    .newBuilder()
+    .addAllVessels(uniqueVessels.asJava)
+    .build()
 
   def upload(request: UploadRequest): IO[Unit] = {
     val hash = vesselHash(request.getVessel())
