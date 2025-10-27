@@ -19,6 +19,7 @@ namespace Kessleract {
         private ApplicationLauncherButton toolbarButton;
         private readonly int mainGuid = Guid.NewGuid().GetHashCode();
         private Rect rect = new Rect(100, 100, 200, 100);
+        private bool showAdvancedSettings = false;
 
         public void Start() {
             GameEvents.onShowUI.Add(OnShowUI);
@@ -59,31 +60,45 @@ namespace Kessleract {
             GUILayout.Label("Server URL:");
             config.ServerUrl = GUILayout.TextField(config.ServerUrl);
 
+            config.UploadEnabled = GUILayout.Toggle(config.UploadEnabled, "Enable Upload");
+            config.DownloadEnabled = GUILayout.Toggle(config.DownloadEnabled, "Enable Download");
+
             GUILayout.Label("Upload Interval (seconds):");
             double.TryParse(GUILayout.TextField(config.UploadIntervalSeconds.ToString()), out double uploadInterval);
             config.UploadIntervalSeconds = uploadInterval;
-
-            config.UploadEnabled = GUILayout.Toggle(config.UploadEnabled, "Enable Upload");
 
             GUILayout.Label("Download Interval (seconds):");
             double.TryParse(GUILayout.TextField(config.DownloadIntervalSeconds.ToString()), out double downloadInterval);
             config.DownloadIntervalSeconds = downloadInterval;
 
-            config.DownloadEnabled = GUILayout.Toggle(config.DownloadEnabled, "Enable Download");
-
-            config.DiscoveryModeEnabled = GUILayout.Toggle(config.DiscoveryModeEnabled, "Enable Discovery Mode");
-
-            GUILayout.Label("Max Abandoned Vehicles Per Body:");
-            int.TryParse(GUILayout.TextField(config.MaxAbandonedVehiclesPerBody.ToString()), out int maxAbandoned);
-            config.MaxAbandonedVehiclesPerBody = maxAbandoned;
-
-            GUILayout.Label("Manual Actions:");
-
-            if (GUILayout.Button("Upload Active Vessel")) {
-                Client.Instance.StartUploadCurrentVehicle();
+            if (GUILayout.Button(showAdvancedSettings ? "Hide Advanced Settings" : "Show Advanced Settings")) {
+                showAdvancedSettings = !showAdvancedSettings;
             }
-            if (GUILayout.Button("Download Abandoned Vehicles")) {
-                Client.Instance.StartDownloadAbandonedVehicles();
+
+            if (showAdvancedSettings) {
+                GUILayout.Label("Advanced Settings:");
+                config.DiscoveryModeEnabled = GUILayout.Toggle(config.DiscoveryModeEnabled, "Enable Discovery Mode");
+
+                GUILayout.Label("Life Time (seconds):");
+                int.TryParse(GUILayout.TextField(config.LifeTime.ToString()), out int lifeTime);
+                config.LifeTime = lifeTime;
+
+                GUILayout.Label("Max Life Time (seconds):");
+                int.TryParse(GUILayout.TextField(config.MaxLifeTime.ToString()), out int maxLifeTime);
+                config.MaxLifeTime = maxLifeTime;
+
+                GUILayout.Label("Max Abandoned Vehicles Per Body:");
+                int.TryParse(GUILayout.TextField(config.MaxAbandonedVehiclesPerBody.ToString()), out int maxAbandoned);
+                config.MaxAbandonedVehiclesPerBody = maxAbandoned;
+
+                GUILayout.Label("Manual Actions:");
+
+                if (GUILayout.Button("Upload Active Vessel")) {
+                    Client.Instance.StartUploadCurrentVehicle();
+                }
+                if (GUILayout.Button("Download Abandoned Vehicles")) {
+                    Client.Instance.StartDownloadAbandonedVehicles();
+                }
             }
             GUILayout.EndVertical();
             GUI.DragWindow();

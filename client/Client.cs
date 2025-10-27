@@ -177,12 +177,11 @@ namespace Kessleract {
                         }
 
                         if (KessleractConfig.Instance.DiscoveryModeEnabled) {
-                            var lifeTime = 100 * 24 * 60 * 60;
                             protoVessel.discoveryInfo = ProtoVessel.CreateDiscoveryNode(
                                 DiscoveryLevels.Presence,
                                 UntrackedObjectClass.A,
-                                0,
-                                lifeTime
+                                KessleractConfig.Instance.LifeTime,
+                                KessleractConfig.Instance.MaxLifeTime
                             );
                         }
 
