@@ -45,7 +45,11 @@ class Routes(vesselRepo: VesselRepository):
   def upload(request: UploadRequest): IO[Unit] = {
     val hash = vesselHash(request.getVessel())
     val body = request.getBody()
-    vesselRepo.upsertVessel(body, hash, request.getVessel())
+    for {
+      _ <- IO.fromEither(validateBody(body).left.map(error => new Exception(s"Invalid body ID: $error")))
+      _ <- IO.fromEither(validateVesselSpec(request.getVessel()).left.map(error => new Exception(s"Invalid vessel spec: $error")))
+      _ <- vesselRepo.upsertVessel(body, hash, request.getVessel())
+    } yield ()
   }
 
   val routes: HttpRoutes[IO] =
