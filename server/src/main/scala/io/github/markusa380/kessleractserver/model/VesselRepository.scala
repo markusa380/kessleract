@@ -29,6 +29,7 @@ class VesselRepository(transactor: HikariTransactor[IO]) {
       s"""
         SELECT vessel_hash, vessel_spec FROM vessel
         WHERE body_id = $bodyId $exclusion
+        ORDER BY random()
         LIMIT $take
       """
     Fragment.const(query).query[(Int, Array[Byte])].to[List].transact(transactor).map { rows =>
