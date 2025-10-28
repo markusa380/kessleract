@@ -22,27 +22,35 @@ namespace Kessleract {
             Instance = this;
         }
 
-        double timeSinceUpload = 0.0;
-        double timeSinceDownload = 0.0;
+        double timeToUpload = 10.0;
+        double timeToDownload = 10.0;
 
         public void Update() {
-            timeSinceUpload += Time.deltaTime;
-            timeSinceDownload += Time.deltaTime;
+            timeToUpload -= Time.deltaTime;
+            timeToDownload -= Time.deltaTime;
 
-
-            if (timeSinceUpload > KessleractConfig.Instance.UploadIntervalSeconds) {
-                timeSinceUpload = 0.0;
-                if (FlightGlobals.ActiveVessel != null && allowableSituations.Contains(FlightGlobals.ActiveVessel.situation)) {
-                    if (KessleractConfig.Instance.UploadEnabled) {
+            if (KessleractConfig.Instance.UploadEnabled) {
+                if (timeToUpload <= 0.0) {
+                    timeToUpload = KessleractConfig.Instance.UploadIntervalSeconds;
+                    if (FlightGlobals.ActiveVessel != null && allowableSituations.Contains(FlightGlobals.ActiveVessel.situation)) {
                         StartUploadCurrentVehicle();
                     }
                 }
             }
 
-            if (timeSinceDownload > KessleractConfig.Instance.DownloadIntervalSeconds) {
-                timeSinceDownload = 0.0;
-                if (KessleractConfig.Instance.DownloadEnabled) {
+            if (KessleractConfig.Instance.DownloadEnabled) {
+                if (timeToDownload <= 0.0) {
+                    timeToDownload = KessleractConfig.Instance.DownloadIntervalSeconds;
                     StartDownloadAbandonedVehicles();
+                }
+            }
+
+            if (FlightGlobals.ActiveVessel != null) {
+                if (Naming.GetVesselHash(FlightGlobals.ActiveVessel) != -1) {
+                    if (FlightGlobals.ActiveVessel.DiscoveryInfo.Level != DiscoveryLevels.Owned) {
+                        Log.Info($"Taking ownership over abandoned vessel ({FlightGlobals.ActiveVessel.vesselName}): {FlightGlobals.ActiveVessel.DiscoveryInfo.Level} => Owned");
+                        FlightGlobals.ActiveVessel.DiscoveryInfo.SetLevel(DiscoveryLevels.Owned);
+                    }
                 }
             }
         }
@@ -69,7 +77,9 @@ namespace Kessleract {
                 yield break;
             }
 
-            var vesselSpec = ToProtobuf.To(FlightGlobals.ActiveVessel.protoVessel);
+            var protoVessel = FlightGlobals.ActiveVessel.BackupVessel();
+
+            var vesselSpec = ToProtobuf.To(protoVessel);
             var requestBody = new Pb.UploadRequest {
                 Body = FlightGlobals.ActiveVessel.mainBody.flightGlobalsIndex,
                 Vessel = vesselSpec
@@ -112,10 +122,10 @@ namespace Kessleract {
                                 nonAbandonedVesselsCount++;
                             }
                         }
-                        else {
-                            var hash = vessel.vesselName.Substring(Naming.ABANDONED_VESSEL_PREFIX.Length);
-                            if (int.TryParse(hash, out int hashInt)) {
-                                abandonedVesselsHashes.Add(hashInt);
+                        else{
+                            var hash = Naming.GetVesselHash(vessel);
+                            if (hash != -1) {
+                                abandonedVesselsHashes.Add(hash);
                             }
                         }
                     }
@@ -167,7 +177,7 @@ namespace Kessleract {
 
                             var distance = (relativePos - vesselRelativePos).magnitude;
 
-                            if (distance < 100) {
+                            if (distance < 1000) {
                                 Log.Info($"Not loading abandoned vessel because it is too close to another vessel ({vessel.vesselName} - {distance}m)");
                                 isSafeOrbit = false;
                                 break;
@@ -195,7 +205,7 @@ namespace Kessleract {
         }
 
         private IEnumerator VoteOnVesselCoroutine(int vesselHash, int body, bool upvote) {
-            Log.Info($"Voting on vessel {vesselHash}, upvote: {upvote}");
+            Log.Info($"Voting on abandoned vessel {vesselHash}, upvote: {upvote}");
 
             var requestBody = new Pb.VoteRequest {
                 Body = body,

@@ -2,6 +2,7 @@ using System;
 using UnityEngine;
 using KSP.UI.Screens;
 using static KSP.UI.Screens.ApplicationLauncher;
+using System.Collections.Generic;
 
 namespace Kessleract {
 
@@ -157,11 +158,16 @@ namespace Kessleract {
                     Client.Instance.StartDownloadAbandonedVehicles();
                 }
                 if (GUILayout.Button("Delete All Abandoned Vehicles")) {
+                    var vesselsToDelete = new List<Vessel>();
                     foreach (var vessel in FlightGlobals.Vessels) {
                         var vesselHash = Naming.GetVesselHash(vessel);
                         if (vesselHash != -1) {
-                            vessel.Die();
+                            vesselsToDelete.Add(vessel);
                         }
+                    }
+
+                    foreach (var vessel in vesselsToDelete) {
+                        vessel.Die();
                     }
                 }
                 if (GUILayout.Button("Debug: Print all available parts")) {

@@ -10,7 +10,7 @@ namespace Kessleract {
         public string ServerUrl { get; set; } = "https://kessleract.click";
         public double UploadIntervalSeconds { get; set; } = 60.0;
         public bool UploadEnabled { get; set; } = false;
-        public double DownloadIntervalSeconds { get; set; } = 300.0;
+        public double DownloadIntervalSeconds { get; set; } = 60.0;
         public bool DownloadEnabled { get; set; } = false;
         public bool DiscoveryModeEnabled { get; set; } = true;
         public int MaxAbandonedVehiclesPerBody { get; set; } = 5;
