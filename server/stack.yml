@@ -18,8 +18,10 @@ services:
     environment:
       DB_URL: jdbc:postgresql://db:5432/kessleract
       DB_USER: kessleract
-      DB_PASSWORD: kessleract
+      DB_PASSWORD_FILE: /run/secrets/kessleract-db-password
       PORT: 8080
+    secrets:
+      - kessleract-db-password
     networks:
       - servernet
       - default
@@ -28,7 +30,9 @@ services:
     environment:
       POSTGRES_DB: kessleract
       POSTGRES_USER: kessleract
-      POSTGRES_PASSWORD: kessleract
+      POSTGRES_PASSWORD_FILE: /run/secrets/kessleract-db-password
+    secrets:
+      - kessleract-db-password
     volumes:
       - db_data:/var/lib/postgresql
     healthcheck:
@@ -36,6 +40,10 @@ services:
       interval: 2s
       timeout: 5s
       retries: 10
+  adminer:
+    image: adminer:latest
+    ports:
+      - 8080:8080
 
 networks:
   servernet:
@@ -43,3 +51,7 @@ networks:
 
 volumes:
   db_data:
+
+secrets:
+  kessleract-db-password:
+    external: true

@@ -16,7 +16,6 @@ object Server:
   def run: IO[Nothing] =
     (for {
       client <- EmberClientBuilder.default[IO].build
-      _      <- Database.migrate.toResource
       tx     <- Database.transactor
       vesselDatabase = VesselRepository(tx)
       httpApp        = Routes(vesselDatabase).routes.orNotFound

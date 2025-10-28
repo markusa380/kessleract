@@ -8,8 +8,8 @@ import io.github.markusa380.kessleractserver.model._
 import kessleract.pb.Service._
 import org.http4s._
 import org.http4s.dsl.io._
-
 import org.typelevel.ci.CIStringSyntax
+
 import scala.jdk.CollectionConverters._
 
 class Routes(vesselRepo: VesselRepository):
@@ -21,8 +21,8 @@ class Routes(vesselRepo: VesselRepository):
     )
   def vote(request: VoteRequest, ip: String): IO[Unit] =
     val vesselHash = request.getVesselHash()
-    val body = request.getBody()
-    val voteValue = if request.getUpvote() then 1 else -1
+    val body       = request.getBody()
+    val voteValue  = if request.getUpvote() then 1 else -1
     vesselRepo.upsertVote(ip, vesselHash, body, voteValue)
 
   def downloadWithVotes(request: DownloadRequest): IO[DownloadResponse] =
@@ -91,7 +91,8 @@ class Routes(vesselRepo: VesselRepository):
     case _                  => IO.unit
   }
 
-  def getIp(request: Request[IO]) = request.headers.get(ci"X-Forwarded-For")
+  def getIp(request: Request[IO]) = request.headers
+    .get(ci"X-Forwarded-For")
     .map(_.head.value)
 
   implicit val downloadRequestDecoder: EntityDecoder[IO, DownloadRequest] =

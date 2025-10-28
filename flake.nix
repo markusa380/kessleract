@@ -13,6 +13,7 @@
           buildInputs = [
             pkgs.sbt
             pkgs.openjdk
+            pkgs.postgresql
           ];
           shellHook = ''
             echo "Welcome to the Kessleract development shell!"

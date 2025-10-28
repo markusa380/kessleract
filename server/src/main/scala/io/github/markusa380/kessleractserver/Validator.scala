@@ -3,14 +3,16 @@ package io.github.markusa380.kessleractserver
 import scala.io.Source
 import scala.jdk.CollectionConverters._
 
-
-val allowedParts = Source.fromResource("allowed_parts.txt").getLines().toSet
+val allowedParts    = Source.fromResource("allowed_parts.txt").getLines().toSet
 val vesselPartBound = 50.0
-val rotationBound = 1000.0
+val rotationBound   = 1000.0
 
 def validateVesselSpec(vessel: kessleract.pb.Messages.VesselSpec): Either[String, Unit] = for {
   _ <- Either.cond(vessel.getPartSpecsCount() > 0, (), "Vessel must have at least one part")
-  _ <- vessel.getPartSpecsList().asScala.toList
+  _ <- vessel
+    .getPartSpecsList()
+    .asScala
+    .toList
     .map(part => validatePart(part))
     .foldLeft[Either[String, Unit]](Right(())) { (acc, res) =>
       for {
@@ -22,7 +24,7 @@ def validateVesselSpec(vessel: kessleract.pb.Messages.VesselSpec): Either[String
 } yield ()
 
 def validatePart(
-  part: kessleract.pb.Messages.PartSpec
+    part: kessleract.pb.Messages.PartSpec
 ): Either[String, Unit] = for {
   _ <- Either.cond(allowedParts.contains(part.getName()), (), "Part name cannot be empty")
   _ <- validatePartPosition(part.getPosition())
@@ -54,7 +56,5 @@ def validateOrbit(orbit: kessleract.pb.Messages.OrbitSpec): Either[String, Unit]
 
 def validateBody(body: Int): Either[String, Unit] =
   val validBodies = Set.range(0, 17)
-  if validBodies.contains(body) then
-    Right(())
-  else
-    Left(s"Invalid body ID: $body")
+  if validBodies.contains(body) then Right(())
+  else Left(s"Invalid body ID: $body")
