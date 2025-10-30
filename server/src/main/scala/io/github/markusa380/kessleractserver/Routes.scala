@@ -44,8 +44,19 @@ class Routes(vesselRepo: VesselRepository):
       _ <- EitherT.liftF(vesselRepo.upsertVessel(body, hash, vessel))
     yield ()
 
+  def htmlReport(): IO[String] =
+    for
+      vehicleCount <- vesselRepo.getVehicleCount
+      votes        <- vesselRepo.getVoteCounts
+    yield HtmlReport.render(vehicleCount, votes._1, votes._2)
+
   val routes: HttpRoutes[IO] =
     HttpRoutes.of[IO] {
+      case GET -> Root =>
+        for {
+          html <- htmlReport()
+          resp <- Ok(html, Headers(Header.Raw(ci"Content-Type", "text/html; charset=UTF-8")))
+        } yield resp
       case req @ POST -> Root / "download" =>
         logging(req)(
           for

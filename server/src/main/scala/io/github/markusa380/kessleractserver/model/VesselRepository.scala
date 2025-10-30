@@ -50,6 +50,21 @@ class VesselRepository(transactor: HikariTransactor[IO]) {
     }
   }
 
+  // Get the total count of vessels
+  def getVehicleCount: IO[Int] = {
+    sql"SELECT COUNT(*) FROM vessel".query[Int].unique.transact(transactor)
+  }
+
+  // Get total upvotes and downvotes
+  def getVoteCounts: IO[(Int, Int)] = {
+    sql"""
+          SELECT
+            SUM(CASE WHEN vote = 1 THEN 1 ELSE 0 END) AS upvotes,
+            SUM(CASE WHEN vote = -1 THEN 1 ELSE 0 END) AS downvotes
+          FROM vessel_votes
+        """.query[(Int, Int)].unique.transact(transactor)
+  }
+
   // Insert or update vessel
   def upsertVessel(bodyId: Int, vesselHash: Int, vessel: VesselSpec): IO[Unit] = {
     val parts           = vessel.partSpecs.map(_.name).toList

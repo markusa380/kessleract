@@ -41,7 +41,8 @@ lazy val root = (project in file("."))
       "io.github.scalapb-json" %% "scalapb-circe"              % ScalaPbCirceVersion,
       "io.github.scalapb-json" %% "scalapb-circe-macros"       % ScalaPbCirceVersion,
       "org.typelevel" %% "log4cats-core"    % Log4CatsVersion,
-      "org.typelevel" %% "log4cats-slf4j"   % Log4CatsVersion
+      "org.typelevel" %% "log4cats-slf4j"   % Log4CatsVersion,
+      "com.lihaoyi" %% "scalatags" % "0.12.0",
     ),
     assembly / assemblyMergeStrategy := {
       case "module-info.class" => MergeStrategy.discard
