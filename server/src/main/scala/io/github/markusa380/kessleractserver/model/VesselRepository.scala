@@ -1,10 +1,12 @@
 package io.github.markusa380.kessleractserver.model
 
+import cats.data.NonEmptySeq
 import cats.effect.IO
 import doobie._
 import doobie.hikari.HikariTransactor
 import doobie.implicits._
-import kessleract.pb.Messages._
+import doobie.postgres.implicits._
+import kessleract.pb.messages._
 
 class VesselRepository(transactor: HikariTransactor[IO]) {
   // Upsert a vote for a vessel
@@ -20,12 +22,17 @@ class VesselRepository(transactor: HikariTransactor[IO]) {
   // Get vessels for a body, excluding hashes, ordered by vote score
   def getVesselsWithVotes(
       bodyId: Int,
-      excludedHashes: List[Int],
-      take: Int
+      excludedHashes: Seq[Int],
+      take: Int,
+      allowablePartsOpt: Option[Seq[String]]
   ): IO[List[(Int, VesselSpec, Int)]] = {
-    val exclusion = if (excludedHashes.isEmpty) "" else s"AND v.vessel_hash NOT IN (${excludedHashes.mkString(",")})"
-    val query =
-      s"""
+    val exclusion = NonEmptySeq.fromSeq(excludedHashes).fold(fr0"")(neExcludedHashes => fr"AND ${Fragments.in(fr"v.vessel_hash", neExcludedHashes)}")
+    val partsFilter = allowablePartsOpt match {
+      // For backwards compatibility, also allow vessels with NULL parts
+      case Some(allowableParts) => fr"AND (parts IS NULL OR parts <@ ${allowableParts.toList}::text[])"
+      case None                 => fr0""
+    }
+    sql"""
         SELECT v.vessel_hash, v.vessel_spec, COALESCE(vv.score, 0) AS score
         FROM vessel v
         LEFT JOIN (
@@ -33,45 +40,25 @@ class VesselRepository(transactor: HikariTransactor[IO]) {
           FROM vessel_votes
           GROUP BY vessel_hash, body
         ) vv ON v.vessel_hash = vv.vessel_hash AND v.body_id = vv.body
-        WHERE v.body_id = $bodyId $exclusion
+        WHERE v.body_id = $bodyId $exclusion $partsFilter
         ORDER BY (COALESCE(vv.score, 0) * random()) DESC
         LIMIT $take
-      """
-    Fragment.const(query).query[(Int, Array[Byte], Int)].to[List].transact(transactor).map { rows =>
+      """.query[(Int, Array[Byte], Int)].to[List].transact(transactor).map { rows =>
       rows.map { case (hash, bytes, score) =>
-        (hash, VesselSpec.newBuilder().mergeFrom(bytes).build(), score)
+        (hash, VesselSpec.parseFrom(bytes), score)
       }
     }
   }
+
   // Insert or update vessel
   def upsertVessel(bodyId: Int, vesselHash: Int, vessel: VesselSpec): IO[Unit] = {
-    val vesselSpec = vessel.toByteArray
+    val parts           = vessel.partSpecs.map(_.name).toList
+    val vesselSpecBytes = vessel.toByteArray
     sql"""
-      INSERT INTO vessel (body_id, vessel_hash, vessel_spec)
-      VALUES ($bodyId, $vesselHash, $vesselSpec)
+      INSERT INTO vessel (body_id, vessel_hash, vessel_spec, parts)
+      VALUES ($bodyId, $vesselHash, $vesselSpecBytes, $parts)
       ON CONFLICT (body_id, vessel_hash)
       DO UPDATE SET vessel_spec = EXCLUDED.vessel_spec
     """.update.run.transact(transactor).void
-  }
-
-  // Get vessels for a body, excluding hashes
-  def getVessels(
-      bodyId: Int,
-      excludedHashes: List[Int],
-      take: Int
-  ): IO[List[(Int, VesselSpec)]] = {
-    val exclusion = if (excludedHashes.isEmpty) "" else s"AND vessel_hash NOT IN (${excludedHashes.mkString(",")})"
-    val query =
-      s"""
-        SELECT vessel_hash, vessel_spec FROM vessel
-        WHERE body_id = $bodyId $exclusion
-        ORDER BY random()
-        LIMIT $take
-      """
-    Fragment.const(query).query[(Int, Array[Byte])].to[List].transact(transactor).map { rows =>
-      rows.map { case (hash, bytes) =>
-        (hash, VesselSpec.newBuilder().mergeFrom(bytes).build())
-      }
-    }
   }
 }

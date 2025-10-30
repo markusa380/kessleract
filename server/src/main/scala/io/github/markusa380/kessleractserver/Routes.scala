@@ -1,113 +1,102 @@
 package io.github.markusa380.kessleractserver
 
+import cats.data.EitherT
 import cats.effect.IO
-import com.google.protobuf.GeneratedMessage
-import com.google.protobuf.util.JsonFormat
-import io.circe._
+import cats.effect.std.Random
+import cats.syntax.all._
 import io.github.markusa380.kessleractserver.model._
-import kessleract.pb.Service._
+import kessleract.pb.service._
 import org.http4s._
+import org.http4s.circe.CirceEntityDecoder._
+import org.http4s.circe.CirceEntityEncoder._
 import org.http4s.dsl.io._
 import org.typelevel.ci.CIStringSyntax
-
-import scala.jdk.CollectionConverters._
+import scalapb_circe.codec._
 
 class Routes(vesselRepo: VesselRepository):
-  implicit val voteRequestDecoder: EntityDecoder[IO, VoteRequest] =
-    EntityDecoder[IO, String].map(raw =>
-      val builder = VoteRequest.newBuilder()
-      JsonFormat.parser().merge(raw, builder)
-      builder.build()
-    )
+
   def vote(request: VoteRequest, ip: String): IO[Unit] =
-    val vesselHash = request.getVesselHash()
-    val body       = request.getBody()
-    val voteValue  = if request.getUpvote() then 1 else -1
+    val vesselHash = request.vesselHash
+    val body       = request.body
+    val voteValue  = if request.upvote then 1 else -1
     vesselRepo.upsertVote(ip, vesselHash, body, voteValue)
 
   def downloadWithVotes(request: DownloadRequest): IO[DownloadResponse] =
     for
       vesselsWithVotes <- vesselRepo.getVesselsWithVotes(
-        request.getBody(),
-        request.getExcludedHashesList().asScala.toList.map(_.toInt),
-        request.getTake()
+        request.body,
+        request.excludedHashes,
+        request.take,
+        if (request.allowableParts.isEmpty) None else request.allowableParts.some
       )
       uniqueVessels = vesselsWithVotes
-        .map { case (hash, vessel, score) =>
-          UniqueVesselSpec.newBuilder().setHash(hash).setVessel(vessel).build()
-        }
-        .take(Math.min(request.getTake, 10))
-    yield DownloadResponse
-      .newBuilder()
-      .addAllVessels(uniqueVessels.asJava)
-      .build()
+        .map { case (hash, vessel, score) => UniqueVesselSpec(vessel.some, hash) }
+        .take(Math.min(request.take, 10))
+    yield DownloadResponse(uniqueVessels)
 
-  def upload(request: UploadRequest): IO[Unit] = {
-    val hash = vesselHash(request.getVessel())
-    val body = request.getBody()
-    for {
-      _ <- IO.fromEither(validateBody(body).left.map(error => new Exception(s"Invalid body ID: $error")))
-      _ <- IO.fromEither(validateVesselSpec(request.getVessel()).left.map(error => new Exception(s"Invalid vessel spec: $error")))
-      _ <- vesselRepo.upsertVessel(body, hash, request.getVessel())
-    } yield ()
-  }
+  def upload(request: UploadRequest): EitherT[IO, ValidationError, Unit] =
+    val body = request.body
+    for
+      vessel <- EitherT.fromOption(request.vessel, ValidationError("Missing vessel spec"))
+      hash = vesselHash(vessel)
+      _ <- EitherT.fromEither(validateBody(body).left.map(error => ValidationError(error)))
+      _ <- EitherT.fromEither(validateVesselSpec(request.getVessel).left.map(error => ValidationError(error)))
+      _ <- EitherT.liftF(vesselRepo.upsertVessel(body, hash, vessel))
+    yield ()
 
   val routes: HttpRoutes[IO] =
     HttpRoutes.of[IO] {
       case req @ POST -> Root / "download" =>
-        val ip = getIp(req)
-        println(s"Received download request from IP: $ip")
-        for
-          req <- req
-            .as[DownloadRequest]
-            .onError { case e => logDecodingErrors(e) }
-          resp <- downloadWithVotes(req)
-            .onError { case e => IO(println(s"Error while processing download request: $e")) }
-          resp <- Ok(resp)
-        yield resp
+        logging(req)(
+          for
+            req  <- req.as[DownloadRequest]
+            resp <- downloadWithVotes(req)
+            resp <- Ok(resp)
+          yield resp
+        )
       case req @ POST -> Root / "upload" =>
-        for {
-          req <- req
-            .as[UploadRequest]
-            .onError { case e => logDecodingErrors(e) }
-          _ <- upload(req)
-            .onError { case e => IO(println(s"Error while processing upload request: $e")) }
-          resp <- Ok()
-        } yield resp
+        logging(req)(
+          for {
+            req <- req.as[UploadRequest]
+            res <- upload(req).value
+            resp <- res.fold(
+              err => BadRequest(err.message),
+              _ => Ok()
+            )
+          } yield resp
+        )
       case req @ POST -> Root / "vote" =>
-        val ip = getIp(req).getOrElse("unknown")
-        for {
-          voteReq <- req
-            .as[VoteRequest]
-            .onError { case e => logDecodingErrors(e) }
-          _ <- vote(voteReq, ip)
-            .onError { case e => IO(println(s"Error while processing vote request: $e")) }
-          resp <- Ok()
-        } yield resp
+        logging(req)(
+          for {
+            voteReq <- req.as[VoteRequest]
+            ip = getIp(req).getOrElse("unknown")
+            _    <- vote(voteReq, ip)
+            resp <- Ok()
+          } yield resp
+        )
     }
 
-  def logDecodingErrors(error: Throwable): IO[Unit] = error match {
-    case _: DecodingFailure => IO(println(s"Error while decoding request: $error"))
-    case _                  => IO.unit
-  }
+  def logRequest(request: Request[IO])(requestId: RequestId): IO[Unit] =
+    log.info(s"${requestId} Received request: ${request.method} ${request.uri}")
+
+  def logging(req: Request[IO])(response: IO[Response[IO]]): IO[Response[IO]] = for
+    requestId <- Random[IO].nextAlphaNumeric.replicateA(8).map(_.mkString).map(RequestId.apply)
+    ip = getIp(req).getOrElse("unknown")
+    _ <- log.info(s"${requestId} Processing request: ${req.method} ${req.uri} (IP: $ip)")
+    response <- response
+      .handleErrorWith(e =>
+        log.error(e)(s"${requestId} Error processing request: ${e.getMessage}") *>
+          InternalServerError()
+      )
+    _ <- log.info(s"${requestId} Response status: ${response.status.code}")
+  yield response
 
   def getIp(request: Request[IO]) = request.headers
     .get(ci"X-Forwarded-For")
     .map(_.head.value)
 
-  implicit val downloadRequestDecoder: EntityDecoder[IO, DownloadRequest] =
-    EntityDecoder[IO, String].map(raw =>
-      val builder = DownloadRequest.newBuilder()
-      JsonFormat.parser().merge(raw, builder)
-      builder.build()
-    )
+case class RequestId(value: String) extends AnyVal {
+  override def toString: String = s"[$value]"
+}
 
-  implicit val uploadRequestDecoder: EntityDecoder[IO, UploadRequest] =
-    EntityDecoder[IO, String].map(raw =>
-      val builder = UploadRequest.newBuilder()
-      JsonFormat.parser().merge(raw, builder)
-      builder.build()
-    )
-
-  implicit def responseEncoder[A <: GeneratedMessage]: EntityEncoder[IO, A] =
-    EntityEncoder[IO, String].contramap[A](msg => JsonFormat.printer().print(msg))
+case class ValidationError(message: String)

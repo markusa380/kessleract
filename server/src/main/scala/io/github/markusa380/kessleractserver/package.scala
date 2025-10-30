@@ -1,15 +1,12 @@
 package io.github.markusa380
 
-import io.circe.Codec
-import kessleract.pb.Messages.VesselSpec
-
-import java.util.Base64
-import scala.jdk.CollectionConverters._
+import cats.effect.IO
+import kessleract.pb.messages.VesselSpec
+import org.typelevel.log4cats.slf4j.Slf4jLogger
 
 package object kessleractserver {
-  implicit val vesselSpecSerde: Codec[VesselSpec] = Codec.forProduct1[VesselSpec, String]("value")(str => VesselSpec.parseFrom(Base64.getDecoder.decode(str)))(vesselSpec => Base64.getEncoder.encodeToString(vesselSpec.toByteArray))
+  def vesselHash(vessel: VesselSpec): Int =
+    vessel.partSpecs.map(_.name).sorted.hashCode
 
-  def vesselHash(vessel: VesselSpec): Int = {
-    vessel.getPartSpecsList.asScala.map(_.getName()).sorted.hashCode
-  }
+  val log = Slf4jLogger.getLogger[IO]
 }

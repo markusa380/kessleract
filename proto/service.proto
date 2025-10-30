@@ -17,6 +17,7 @@ message DownloadRequest {
     int32 body = 1;
     repeated int32 excluded_hashes = 2;
     int32 take = 3;
+    repeated string allowable_parts = 4;
 }
 
 message DownloadResponse {
