@@ -1,15 +1,8 @@
-/client/bin
-/client/obj
-*.sln
-
-/server/vessels.json
-
 .bsp
 .metals
 .vscode
 target
-metals.sbt
 sbt-launch.jar
-.bloop/
+.bloop
 
-tools/
+.direnv

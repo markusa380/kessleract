@@ -1,10 +1,17 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup Condition="'$(OS)' != 'Windows_NT'">
+    <!-- Set this path to your KSP installation if you're on Windows -->
+    <KSPBasePath>/home/markus/.local/share/Steam/steamapps/common/Kerbal Space Program</KSPBasePath>
+    <ManagedPath>$(KSPBasePath)\KSP_Data\Managed</ManagedPath>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(OS)' != 'UNIX'">
+    <!-- Set this path to your KSP installation if you're on Linux -->
+    <KSPBasePath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program</KSPBasePath>
+    <ManagedPath>$(KSPBasePath)\KSP_x64_Data\Managed</ManagedPath>
+  </PropertyGroup>
   <PropertyGroup>
     <TargetFramework>net462</TargetFramework>
     <PlatformTarget>x64</PlatformTarget>
-    <!-- Set this path to your KSP installation -->
-    <KSPBasePath>C:\Program Files (x86)\Steam\steamapps\common\Kerbal Space Program</KSPBasePath>
-    <ManagedPath>$(KSPBasePath)\KSP_x64_Data\Managed</ManagedPath>
     <ModPath>$(KSPBasePath)\GameData\KessleractClient</ModPath>
     <TexturesPath>$(ModPath)\Textures</TexturesPath>
     <PluginsPath>$(ModPath)\Plugins</PluginsPath>
@@ -51,6 +58,14 @@
     <Textures Include="Textures\*" />
     <License Include="..\LICENSE" />
   </ItemGroup>
+  <Target Name="Protos" BeforeTargets="BeforeBuild">
+    <Exec Command="sh ./build_proto.sh"/>
+    <!-- Trick to convince dotnet to take into account the generated files -->
+    <ItemGroup>
+      <Compile Include="**/*$(DefaultLanguageSourceExtension)"
+               Exclude="$(DefaultItemExcludes);$(DefaultExcludesInProjectFolder);$(BaseIntermediateOutputPath)**;$(BaseOutputPath)**;@(Compile)" />
+    </ItemGroup>
+  </Target>
   <Target Name="PostBuild" AfterTargets="Build">
     <Copy SourceFiles="@(PluginDlls)" DestinationFolder="$(PluginsPath)" />
     <Copy SourceFiles="@(Textures)" DestinationFolder="$(TexturesPath)" SkipUnchangedFiles="true" />

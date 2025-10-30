@@ -1,10 +1,10 @@
 {
-  description = "Kessleract Scala/SBT project";
+  description = "Kessleract";
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     flake-utils.url = "github:numtide/flake-utils";
   };
-  outputs = { self, nixpkgs, flake-utils }:
+  outputs = { nixpkgs, flake-utils, ... }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = import nixpkgs { inherit system; };
@@ -13,11 +13,9 @@
           buildInputs = [
             pkgs.sbt
             pkgs.openjdk
-            pkgs.postgresql
+            pkgs.protobuf_30
+            pkgs.dotnet-sdk
           ];
-          shellHook = ''
-            echo "Welcome to the Kessleract development shell!"
-          '';
         };
       }
     );

@@ -1,6 +1,7 @@
 package io.github.markusa380.kessleractserver
 
 import cats.effect.IO
+import cats.syntax.all._
 import com.comcast.ip4s._
 import io.github.markusa380.kessleractserver.model._
 import org.http4s.ember.client.EmberClientBuilder
@@ -17,8 +18,11 @@ object Server:
       client <- EmberClientBuilder.default[IO].build
       tx     <- Database.transactor
       vesselDatabase = VesselRepository(tx)
-      httpApp        = Routes(vesselDatabase).routes.orNotFound
-      finalHttpApp   = EntityLimiter(httpApp, 100_000)
+      httpApp =
+        Vessels(vesselDatabase).routes
+          .<+>(HtmlReport(vesselDatabase).routes)
+          .orNotFound
+      finalHttpApp = EntityLimiter(httpApp, 100_000)
       _ <-
         EmberServerBuilder
           .default[IO]

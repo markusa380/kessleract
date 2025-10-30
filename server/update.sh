@@ -1,1 +1,0 @@
-docker service update --force $(docker stack services kessleract --filter name=kessleract_server --quiet)
