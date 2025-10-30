@@ -23,17 +23,17 @@ namespace Kessleract {
         private ApplicationLauncherButton toolbarButton;
         private readonly int mainGuid = Guid.NewGuid().GetHashCode();
         private readonly int settingsGuid = Guid.NewGuid().GetHashCode();
-        private Rect mainRect = new Rect(100, 100, 200, 100);
-        private Rect settingsRect = new Rect(100, 100, 200, 100);
+        private Rect mainRect = new Rect(100, 100, 200, 0);
+        private Rect settingsRect = new Rect(300, 100, 200, 0);
         private bool showAdvancedSettings = false;
 
+        private readonly Texture icon = GameDatabase.Instance.GetTexture("KessleractClient/Textures/logo", false);
         private readonly Texture settingsIcon = GameDatabase.Instance.GetTexture("KessleractClient/Textures/options_w", false);
         private readonly Texture closeIcon = GameDatabase.Instance.GetTexture("KessleractClient/Textures/close_w", false);
 
         public void Start() {
             GameEvents.onShowUI.Add(OnShowUI);
             GameEvents.onHideUI.Add(OnHideUI);
-            Texture icon = GameDatabase.Instance.GetTexture("KessleractClient/Textures/icon", false);
 
             toolbarButton = ApplicationLauncher
                 .Instance
@@ -130,6 +130,7 @@ namespace Kessleract {
             config.DownloadIntervalSeconds = downloadInterval;
 
             if (GUILayout.Button(showAdvancedSettings ? "Hide Advanced Settings" : "Show Advanced Settings")) {
+                settingsRect.height = 0;
                 showAdvancedSettings = !showAdvancedSettings;
             }
 

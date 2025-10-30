@@ -2,11 +2,14 @@ package io.github.markusa380.kessleractserver
 
 import kessleract.pb.{messages => pb}
 
-val vesselPartBound = 50.0
-val rotationBound   = 1000.0
+val vesselPartBound   = 50.0
+val rotationBound     = 1000.0
+val maxVesselParts    = 200
+val maxPartNameLength = 50
 
 def validateVesselSpec(vessel: pb.VesselSpec): Either[String, Unit] = for {
   _ <- Either.cond(vessel.partSpecs.size > 0, (), "Vessel must have at least one part")
+  _ <- Either.cond(vessel.partSpecs.size <= 200, (), s"Vessel cannot have more than $maxVesselParts parts, found: ${vessel.partSpecs.size}")
   _ <- vessel.partSpecs
     .map(validatePart)
     .foldLeft[Either[String, Unit]](Right(())) { (acc, res) =>
@@ -21,6 +24,8 @@ def validateVesselSpec(vessel: pb.VesselSpec): Either[String, Unit] = for {
 def validatePart(
     part: pb.PartSpec
 ): Either[String, Unit] = for {
+  _ <- Either.cond(part.name.nonEmpty, (), "Part name cannot be empty")
+  _ <- Either.cond(part.name.length <= maxPartNameLength, (), s"Part name exceeds maximum length of $maxPartNameLength characters")
   _ <- part.position.fold(Left("Part position cannot be empty"))(validatePartPosition)
   _ <- part.rotation.fold(Left("Part rotation cannot be empty"))(validatePartRotation)
   // TODO: Maybe also validate the attachments
