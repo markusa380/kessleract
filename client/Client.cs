@@ -14,12 +14,15 @@ namespace Kessleract {
 
         public static Client Instance { get; private set; }
 
+        public List<string> partsList = new List<string>();
+
         public static Vessel.Situations[] allowableSituations = new Vessel.Situations[] {
           Vessel.Situations.ORBITING
         };
 
         public void Start() {
             Instance = this;
+            partsList = PartLoader.LoadedPartsList.Select(part => part.name).ToList();
         }
 
         double timeToUpload = 10.0;
@@ -139,6 +142,7 @@ namespace Kessleract {
                 };
 
                 requestBody.ExcludedHashes.AddRange(abandonedVesselsHashes);
+                requestBody.AllowableParts.AddRange(partsList);
 
                 var requestBodyJson = JsonFormatter.Default.Format(requestBody);
 

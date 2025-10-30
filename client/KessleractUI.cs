@@ -170,11 +170,6 @@ namespace Kessleract {
                         vessel.Die();
                     }
                 }
-                if (GUILayout.Button("Debug: Print all available parts")) {
-                    foreach (var part in PartLoader.LoadedPartsList) {
-                        Debug.Log($"Part: {part.name}, title: {part.title}");
-                    }
-                }
             }
             GUILayout.EndVertical();
             GUI.DragWindow();

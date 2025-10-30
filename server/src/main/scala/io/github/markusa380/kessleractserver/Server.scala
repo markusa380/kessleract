@@ -7,7 +7,6 @@ import org.http4s.ember.client.EmberClientBuilder
 import org.http4s.ember.server.EmberServerBuilder
 import org.http4s.implicits._
 import org.http4s.server.middleware.EntityLimiter
-import org.http4s.server.middleware.Logger
 
 object Server:
 
@@ -19,12 +18,7 @@ object Server:
       tx     <- Database.transactor
       vesselDatabase = VesselRepository(tx)
       httpApp        = Routes(vesselDatabase).routes.orNotFound
-
-      // With Middlewares in place
-      finalHttpApp = Logger.httpApp(true, true)(
-        EntityLimiter(httpApp, 100_000)
-      )
-
+      finalHttpApp   = EntityLimiter(httpApp, 100_000)
       _ <-
         EmberServerBuilder
           .default[IO]
