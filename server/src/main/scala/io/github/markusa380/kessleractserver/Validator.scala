@@ -2,10 +2,11 @@ package io.github.markusa380.kessleractserver
 
 import kessleract.pb.{messages => pb}
 
-val vesselPartBound   = 50.0
-val rotationBound     = 1000.0
-val maxVesselParts    = 200
-val maxPartNameLength = 50
+val vesselPartBound         = 50.0
+val rotationBound           = 1000.0
+val maxVesselParts          = 200
+val maxPartNameLength       = 50
+val maxAttachNodeNameLength = 50
 
 def validateVesselSpec(vessel: pb.VesselSpec): Either[String, Unit] = for {
   _ <- Either.cond(vessel.partSpecs.size > 0, (), "Vessel must have at least one part")
@@ -28,7 +29,21 @@ def validatePart(
   _ <- Either.cond(part.name.length <= maxPartNameLength, (), s"Part name exceeds maximum length of $maxPartNameLength characters")
   _ <- part.position.fold(Left("Part position cannot be empty"))(validatePartPosition)
   _ <- part.rotation.fold(Left("Part rotation cannot be empty"))(validatePartRotation)
-  // TODO: Maybe also validate the attachments
+  _ <- part.attachments.foldLeft[Either[String, Unit]](Right(())) { (acc, attachment) =>
+    acc.flatMap(_ => validateAttachNode(attachment))
+  }
+  _ <- part.surfaceAttachment.fold(Right(()))(validateAttachNode)
+} yield ()
+
+def validateAttachNode(name: String): Either[String, Unit] = for {
+  _ <- Either.cond(name.nonEmpty, (), "Attachment node name cannot be empty")
+  _ <- Either.cond(name.length <= maxAttachNodeNameLength, (), s"Attachment node name exceeds maximum length of $maxAttachNodeNameLength characters")
+  _ <- name match {
+    case s"$id,$idx,$mesh" if idx.trim.toIntOption.isDefined => Right(())
+    case s"$id,$idx" if idx.trim.toIntOption.isDefined       => Right(())
+    case _                                                   => Left(s"Attachment node name has invalid format: $name")
+  }
+
 } yield ()
 
 def validatePartPosition(position: pb.Vector3): Either[String, Unit] = for {

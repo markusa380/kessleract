@@ -26,7 +26,7 @@ class VesselRepository(transactor: HikariTransactor[IO]) {
       take: Int,
       allowablePartsOpt: Option[Seq[String]]
   ): IO[List[(Int, VesselSpec, Int)]] = {
-    val exclusion = NonEmptySeq.fromSeq(excludedHashes).fold(fr0"")(neExcludedHashes => fr"AND ${Fragments.in(fr"v.vessel_hash", neExcludedHashes)}")
+    val exclusion = NonEmptySeq.fromSeq(excludedHashes).fold(fr0"")(neExcludedHashes => fr"AND NOT ${Fragments.in(fr"v.vessel_hash", neExcludedHashes)}")
     val partsFilter = allowablePartsOpt match {
       // For backwards compatibility, also allow vessels with NULL parts
       case Some(allowableParts) => fr"AND (parts IS NULL OR parts <@ ${allowableParts.toList}::text[])"

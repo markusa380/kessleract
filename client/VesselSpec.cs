@@ -72,12 +72,15 @@ namespace Kessleract {
 
             var vessel = new ProtoVessel(vesselNode, HighLogic.CurrentGame);
 
-            for (int i = 0; i < protoParts.Length; i++) {
-                var part = protoParts[i]; // TODO: Unused?
+            for (int i = 0; i < vessel.protoPartSnapshots.Count; i++) {
                 var partSnapshot = vessel.protoPartSnapshots[i];
+                var partSpec = vesselSpec.PartSpecs[i];
                 partSnapshot.attachNodes.Clear();
-                foreach (var attachment in vesselSpec.PartSpecs[i].Attachments) {
+                foreach (var attachment in partSpec.Attachments) {
                     partSnapshot.attachNodes.Add(new AttachNodeSnapshot(attachment));
+                }
+                if (partSpec.HasSurfaceAttachment) {
+                    partSnapshot.srfAttachNode = new AttachNodeSnapshot(partSpec.SurfaceAttachment);
                 }
             }
 
@@ -121,6 +124,7 @@ namespace Kessleract {
                 Position = To(snapshot.position),
                 Rotation = To(snapshot.rotation),
                 ParentIndex = snapshot.parentIdx,
+                SurfaceAttachment = snapshot.srfAttachNode.Save()
             };
 
             partSpec.Attachments.AddRange(attachments);

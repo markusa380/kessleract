@@ -171,6 +171,20 @@ namespace Kessleract {
                         vessel.Die();
                     }
                 }
+                if (GUILayout.Button("Debug Spawn Clone")) {
+                    var protoVessel = FlightGlobals.ActiveVessel.BackupVessel();
+                    var vesselSpec = ToProtobuf.To(protoVessel);
+                    vesselSpec.OrbitSpec.Epoch = vesselSpec.OrbitSpec.Epoch + 0.01;
+                    var uniqueVesselSpec = new Pb.UniqueVesselSpec() {
+                        Vessel = vesselSpec,
+                        Hash = 0
+                    };
+                    Client.Instance.LoadProtoVesselFromSpec(
+                        uniqueVesselSpec,
+                        FlightGlobals.ActiveVessel.mainBody,
+                        safetyChecks: false
+                    );
+                }
             }
             GUILayout.EndVertical();
             GUI.DragWindow();

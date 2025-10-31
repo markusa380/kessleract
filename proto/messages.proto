@@ -23,6 +23,7 @@ message PartSpec {
   Vector3 position = 3;
   Quaternion rotation = 4;
   repeated string attachments = 5;
+  optional string surfaceAttachment = 6;
 }
 
 message Vector3 {
