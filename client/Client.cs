@@ -86,23 +86,10 @@ namespace Kessleract {
                 Body = FlightGlobals.ActiveVessel.mainBody.flightGlobalsIndex,
                 Vessel = vesselSpec
             };
-            var requestBodyJson = JsonFormatter.Default.Format(requestBody);
 
-            var request = new UnityWebRequest(KessleractConfig.Instance.ServerUrl + "/upload", "POST");
-            byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBodyJson);
-            request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-            request.downloadHandler = new DownloadHandlerBuffer();
-            request.SetRequestHeader("Content-Type", "application/json");
-            yield return request.SendWebRequest();
-
-            if (request.isNetworkError) {
-                Log.Info("Error while uploading vessel: " + request.error);
-            }
-            else if (request.responseCode != 200) {
-                Log.Info("Unexpected response code while uploading vessel: " + request.responseCode);
-            }
-
-            Log.Info("Upload of active vessel complete");
+            yield return Request.UploadVesselCoroutine(requestBody, () =>
+                Log.Info("Upload of active vessel complete")
+            );
         }
 
         private IEnumerator DownloadAbandonedVehiclesCoroutine() {
@@ -120,32 +107,15 @@ namespace Kessleract {
                     Take = take,
                 };
 
-                requestBody.ExcludedHashes.AddRange(abandonedVesselsHashes);
-                requestBody.AllowableParts.AddRange(partsList);
 
-                var requestBodyJson = JsonFormatter.Default.Format(requestBody);
-
-                var request = new UnityWebRequest(KessleractConfig.Instance.ServerUrl + "/download", "POST");
-                byte[] bodyRaw = Encoding.UTF8.GetBytes(requestBodyJson);
-                request.uploadHandler = new UploadHandlerRaw(bodyRaw);
-                request.downloadHandler = new DownloadHandlerBuffer();
-                request.SetRequestHeader("Content-Type", "application/json");
-                yield return request.SendWebRequest();
-
-                if (request.isNetworkError) {
-                    Log.Info("Error while downloading vessels: " + request.error);
-                }
-                else if (request.responseCode != 200) {
-                    Log.Info("Unexpected response code while downloading vessels: " + request.responseCode);
-                }
-                else {
-                    var responseBodyJson = request.downloadHandler.text;
-                    var downloadResponse = Pb.DownloadResponse.Parser.ParseJson(responseBodyJson);
-
-                    foreach (var uniqueVessel in downloadResponse.Vessels) {
-                        LoadProtoVesselFromSpec(uniqueVessel, body, true);
+                yield return Request.DownloadVesselCoroutine(
+                    requestBody,
+                    (downloadResponse) => {
+                        foreach (var uniqueVessel in downloadResponse.Vessels) {
+                            LoadProtoVesselFromSpec(uniqueVessel, body, true);
+                        }
                     }
-                }
+                );
             }
         }
 
@@ -205,7 +175,7 @@ namespace Kessleract {
                 var distance = (relativePos - vesselRelativePos).magnitude;
 
                 if (distance < 1000) {
-                    Log.Info($"Not loading abandoned vessel ${uniqueVessel.Hash} because it is too close to another vessel ({vessel.vesselName} - {distance}m)");
+                    Log.Info($"Not loading abandoned vessel {uniqueVessel.Hash} because it is too close to another vessel ({vessel.vesselName} - {distance}m)");
                     isSafeOrbit = false;
                     break;
                 }

@@ -34,3 +34,15 @@ message VoteRequest {
     int32 vessel_hash = 2;
     bool upvote = 3;
 }
+
+
+message VesselInfoRequest {
+    int32 body = 1;
+    VesselSpec vessel = 2;
+}
+
+message VesselInfoResponse {
+    bool can_upload = 1;
+    bool already_uploaded = 2;
+    int32 votes = 3;
+}

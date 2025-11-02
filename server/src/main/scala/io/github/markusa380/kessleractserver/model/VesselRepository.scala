@@ -9,6 +9,21 @@ import doobie.postgres.implicits._
 import kessleract.pb.messages._
 
 class VesselRepository(transactor: HikariTransactor[IO]) {
+
+  def alreadyExists(bodyId: Int, vessel: VesselSpec): IO[Boolean] = {
+    val vesselHash = vessel.partSpecs.map(_.name).sorted.hashCode
+    sql"""
+      SELECT COUNT(*) FROM vessel WHERE body_id = $bodyId AND vessel_hash = $vesselHash
+    """.query[Int].unique.transact(transactor).map(_ > 0)
+  }
+
+  def getVotes(bodyId: Int, vessel: VesselSpec): IO[Int] = {
+    val vesselHash = vessel.partSpecs.map(_.name).sorted.hashCode
+    sql"""
+      SELECT COALESCE(SUM(vote), 0) FROM vessel_votes WHERE body = $bodyId AND vessel_hash = $vesselHash
+    """.query[Int].unique.transact(transactor)
+  }
+
   // Upsert a vote for a vessel
   def upsertVote(ip: String, vesselHash: Int, body: Int, vote: Int): IO[Unit] = {
     sql"""

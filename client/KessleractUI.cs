@@ -15,7 +15,7 @@ namespace Kessleract {
         private bool visible = true;
 
         // true when the window is opened from the toolbar
-        private bool open = false; // primary UI open from toolbar
+        private bool open = false;
 
         // true when the settings window is opened
         private bool settingsOpen = false;
@@ -30,6 +30,11 @@ namespace Kessleract {
         private readonly Texture icon = GameDatabase.Instance.GetTexture("KessleractClient/Textures/logo", false);
         private readonly Texture settingsIcon = GameDatabase.Instance.GetTexture("KessleractClient/Textures/options_w", false);
         private readonly Texture closeIcon = GameDatabase.Instance.GetTexture("KessleractClient/Textures/close_w", false);
+
+        private bool currentVesselUploaded = false;
+        private bool currentVesselValid = true;
+        private int currentVesselUpvotes = 0;
+        private bool vesselInfoFetched = false;
 
         public void Start() {
             GameEvents.onShowUI.Add(OnShowUI);
@@ -78,7 +83,26 @@ namespace Kessleract {
             }
             GUILayout.EndHorizontal();
 
-            GUILayout.Label("Abandoned Vessels:");
+            GUILayout.BeginHorizontal();
+            if (currentVesselUploaded) {
+                GUILayout.Label($"Current vessel votes: {currentVesselUpvotes}");
+            }
+            else if (currentVesselValid) {
+                GUILayout.Label("Current vessel has not been uploaded yet.");
+            }
+            else {
+                GUILayout.Label("Current vessel is not valid for upload.");
+            }
+
+            if (GUILayout.Button("⟳", GUILayout.Width(24), GUILayout.Height(24))) {
+                StartFetchVesselInfo();
+            }
+            else if (!vesselInfoFetched) {
+                StartFetchVesselInfo();
+            }
+
+            GUILayout.EndHorizontal();
+            GUILayout.Space(10);
 
             var numAbandonedVessels = 0;
             foreach (var vessel in FlightGlobals.VesselsLoaded) {
@@ -102,6 +126,21 @@ namespace Kessleract {
 
             GUILayout.EndVertical();
             GUI.DragWindow();
+        }
+
+        private void StartFetchVesselInfo() {
+            var protoVessel = FlightGlobals.ActiveVessel.BackupVessel();
+            var vesselSpec = ToProtobuf.To(protoVessel);
+            var requestBody = new Pb.VesselInfoRequest {
+                Body = FlightGlobals.ActiveVessel.mainBody.flightGlobalsIndex,
+                Vessel = vesselSpec
+            };
+            StartCoroutine(Request.GetVesselInfoCoroutine(requestBody, response => {
+                currentVesselUploaded = response.AlreadyUploaded;
+                currentVesselValid = response.CanUpload;
+                currentVesselUpvotes = response.Votes;
+            }));
+            vesselInfoFetched = true;
         }
 
         private void SettingsWindowFunction(int windowID) {
