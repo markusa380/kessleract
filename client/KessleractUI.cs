@@ -30,6 +30,7 @@ namespace Kessleract {
         private readonly Texture icon = GameDatabase.Instance.GetTexture("KessleractClient/Textures/logo", false);
         private readonly Texture settingsIcon = GameDatabase.Instance.GetTexture("KessleractClient/Textures/options_w", false);
         private readonly Texture closeIcon = GameDatabase.Instance.GetTexture("KessleractClient/Textures/close_w", false);
+        private readonly Texture refreshIcon = GameDatabase.Instance.GetTexture("KessleractClient/Textures/refresh", false);
 
         private bool currentVesselUploaded = false;
         private bool currentVesselValid = true;
@@ -39,6 +40,8 @@ namespace Kessleract {
         public void Start() {
             GameEvents.onShowUI.Add(OnShowUI);
             GameEvents.onHideUI.Add(OnHideUI);
+            GameEvents.onVesselChange.Add(MarkOutdated);
+            GameEvents.onVesselWasModified.Add(MarkOutdated);
 
             toolbarButton = ApplicationLauncher
                 .Instance
@@ -54,6 +57,16 @@ namespace Kessleract {
                 );
 
             Instance = this;
+            StartFetchVesselInfo();
+        }
+
+        public void OnDestroy() {
+            GameEvents.onShowUI.Remove(OnShowUI);
+            GameEvents.onHideUI.Remove(OnHideUI);
+            GameEvents.onVesselChange.Remove(MarkOutdated);
+            GameEvents.onVesselWasModified.Remove(MarkOutdated);
+
+            ApplicationLauncher.Instance.RemoveModApplication(toolbarButton);
         }
 
         private bool IsShown() {
@@ -84,7 +97,10 @@ namespace Kessleract {
             GUILayout.EndHorizontal();
 
             GUILayout.BeginHorizontal();
-            if (currentVesselUploaded) {
+            if (!vesselInfoFetched) {
+                GUILayout.Label("Vessel info outdated.");
+            }
+            else if (currentVesselUploaded) {
                 GUILayout.Label($"Current vessel votes: {currentVesselUpvotes}");
             }
             else if (currentVesselValid) {
@@ -94,10 +110,7 @@ namespace Kessleract {
                 GUILayout.Label("Current vessel is not valid for upload.");
             }
 
-            if (GUILayout.Button("⟳", GUILayout.Width(24), GUILayout.Height(24))) {
-                StartFetchVesselInfo();
-            }
-            else if (!vesselInfoFetched) {
+            if (GUILayout.Button(refreshIcon, GUILayout.Width(24), GUILayout.Height(24))) {
                 StartFetchVesselInfo();
             }
 
@@ -135,12 +148,17 @@ namespace Kessleract {
                 Body = FlightGlobals.ActiveVessel.mainBody.flightGlobalsIndex,
                 Vessel = vesselSpec
             };
-            StartCoroutine(Request.GetVesselInfoCoroutine(requestBody, response => {
-                currentVesselUploaded = response.AlreadyUploaded;
-                currentVesselValid = response.CanUpload;
-                currentVesselUpvotes = response.Votes;
-            }));
-            vesselInfoFetched = true;
+            StartCoroutine(
+                Request.GetVesselInfoCoroutine(
+                    requestBody,
+                    response => {
+                        currentVesselUploaded = response.AlreadyUploaded;
+                        currentVesselValid = response.CanUpload;
+                        currentVesselUpvotes = response.Votes;
+                        vesselInfoFetched = true;
+                    }
+                )
+            );
         }
 
         private void SettingsWindowFunction(int windowID) {
@@ -246,10 +264,11 @@ namespace Kessleract {
             visible = false;
         }
 
-        public void OnDestroy() {
-            GameEvents.onShowUI.Remove(OnShowUI);
-            GameEvents.onHideUI.Remove(OnHideUI);
-            ApplicationLauncher.Instance.RemoveModApplication(toolbarButton);
+        private void MarkOutdated(Vessel vessel) {
+            if (vessel == FlightGlobals.ActiveVessel) {
+                Log.Info("Marking vessel info as outdated.");
+                vesselInfoFetched = false;
+            }
         }
     }
 }

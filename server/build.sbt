@@ -15,6 +15,8 @@ lazy val updateServer = taskKey[Unit]("Deploys the server to the production envi
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
 
+val allowableDevDockerContexts = Set("default", "desktop-linux")
+
 lazy val root = (project in file("."))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
   .settings(
@@ -74,8 +76,8 @@ lazy val root = (project in file("."))
     startDevDb := {
       import sys.process._
       val currentContext = "docker context show".!!.trim
-      if (currentContext != "default") {
-        throw new Exception(s"Current Docker context is '$currentContext'. Please switch to the 'default' context to start the database.")
+      if (!allowableDevDockerContexts.contains(currentContext)) {
+        throw new Exception(s"Current Docker context is '$currentContext' - you probably do not want to start the development database here.")
       }
       val dockerCmd = "docker run --name kessleract-db --rm -d" +
         " -v kessleract_db:/var/lib/postgresql " +
@@ -90,8 +92,8 @@ lazy val root = (project in file("."))
     stopDevDb := {
       import sys.process._
       val currentContext = "docker context show".!!.trim
-      if (currentContext != "default") {
-        throw new Exception(s"Current Docker context is '$currentContext'. Please switch to the 'default' context to start the database.")
+      if (!allowableDevDockerContexts.contains(currentContext)) {
+        throw new Exception(s"Current Docker context is '$currentContext' - you probably are not running the development database here.")
       }
       "docker stop kessleract-db".!!
       println("Stopped development database container")
