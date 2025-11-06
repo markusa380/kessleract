@@ -51,7 +51,7 @@ namespace Kessleract {
             );
         }
 
-        public static ProtoVessel From(Pb.VesselSpec vesselSpec, CelestialBody body, int hash) {
+        public static bool From(Pb.VesselSpec vesselSpec, CelestialBody body, int hash, out ProtoVessel vessel) {
             var flightId = ShipConstruction.GetUniqueFlightID(HighLogic.CurrentGame.flightState);
 
             var protoParts = new ConfigNode[vesselSpec.PartSpecs.Count];
@@ -70,23 +70,63 @@ namespace Kessleract {
               protoParts
             );
 
-            var vessel = new ProtoVessel(vesselNode, HighLogic.CurrentGame);
+            vessel = new ProtoVessel(vesselNode, HighLogic.CurrentGame);
 
             for (int i = 0; i < vessel.protoPartSnapshots.Count; i++) {
                 var partSnapshot = vessel.protoPartSnapshots[i];
                 var partSpec = vesselSpec.PartSpecs[i];
+
                 partSnapshot.attachNodes.Clear();
                 foreach (var attachment in partSpec.Attachments) {
                     partSnapshot.attachNodes.Add(new AttachNodeSnapshot(attachment));
                 }
+
                 if (partSpec.HasSurfaceAttachment) {
                     partSnapshot.srfAttachNode = new AttachNodeSnapshot(partSpec.SurfaceAttachment);
                 }
+
+                var availablePart = PartLoader.getPartInfoByName(partSnapshot.partName);
+                if (availablePart == null) {
+                    Log.Error($"Part {partSnapshot.partName} not found in PartLoader, aborting");
+                    return false;
+                }
+
+                PopulateModules(partSnapshot, availablePart);
+
+                SetVariant(partSnapshot, partSpec.ModuleVariantName, availablePart);
             }
 
-            return vessel;
+            return true;
         }
 
+        private static void SetVariant(ProtoPartSnapshot partSnapshot, string variantName, AvailablePart availablePart) {
+            if (!string.IsNullOrEmpty(variantName)) {
+                var modulePartVariants = partSnapshot.FindModule("ModulePartVariants");
+
+                if (modulePartVariants == null) {
+                    Log.Error($"Part {partSnapshot.partName} does not have ModulePartVariants, cannot set variant {variantName}");
+                }
+                else if (availablePart.GetVariant(variantName) == null) {
+                    Log.Error($"Part {partSnapshot.partName} does not have variant {variantName}, skipping");
+                }
+                else {
+                    modulePartVariants
+                    .moduleValues
+                    .AddValue("selectedVariant", variantName);
+                }
+            }
+        }
+
+        private static void PopulateModules(
+                ProtoPartSnapshot partSnapshot,
+                AvailablePart availablePart
+            ) {
+            foreach (var module in availablePart.partPrefab.Modules) {
+                var config = new ConfigNode();
+                module.Save(config);
+                partSnapshot.modules.Add(new ProtoPartModuleSnapshot(config));
+            }
+        }
     }
 
     public class ToProtobuf {
@@ -124,8 +164,12 @@ namespace Kessleract {
                 Position = To(snapshot.position),
                 Rotation = To(snapshot.rotation),
                 ParentIndex = snapshot.parentIdx,
-                SurfaceAttachment = snapshot.srfAttachNode.Save()
+                SurfaceAttachment = snapshot.srfAttachNode.Save(),
             };
+
+            if (!string.IsNullOrEmpty(snapshot.moduleVariantName)) {
+                partSpec.ModuleVariantName = snapshot.moduleVariantName;
+            }
 
             partSpec.Attachments.AddRange(attachments);
 

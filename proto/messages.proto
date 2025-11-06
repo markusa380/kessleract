@@ -24,6 +24,7 @@ message PartSpec {
   Quaternion rotation = 4;
   repeated string attachments = 5;
   optional string surfaceAttachment = 6;
+  optional string moduleVariantName = 7;
 }
 
 message Vector3 {

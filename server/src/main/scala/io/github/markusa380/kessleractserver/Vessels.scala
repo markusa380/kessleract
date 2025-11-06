@@ -61,14 +61,13 @@ case class Vessels(vesselRepo: VesselRepository):
         request.vessel,
         ValidationError("Missing vessel spec")
       )
-      hash = vesselHash(vessel)
       _ <- EitherT.fromEither(
         validateBody(body).left.map(error => ValidationError(error))
       )
       _ <- EitherT.fromEither(
         validateVesselSpec(request.getVessel).left.map(error => ValidationError(error))
       )
-      _ <- EitherT.liftF(vesselRepo.upsertVessel(body, hash, vessel))
+      _ <- EitherT.liftF(vesselRepo.upsertVessel(body, vessel))
     yield ()
 
   val routes: HttpRoutes[IO] =

@@ -139,7 +139,9 @@ namespace Kessleract {
             ) {
             var vesselSpec = uniqueVessel.Vessel;
 
-            var protoVessel = FromProtobuf.From(vesselSpec, body, uniqueVessel.Hash);
+            if (!FromProtobuf.From(vesselSpec, body, uniqueVessel.Hash, out var protoVessel)) {
+                return;
+            }
 
             var orbit = protoVessel.orbitSnapShot.Load();
             var relativePos = orbit.getRelativePositionAtUT(Planetarium.GetUniversalTime());

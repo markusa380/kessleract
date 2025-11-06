@@ -6,21 +6,22 @@ import doobie._
 import doobie.hikari.HikariTransactor
 import doobie.implicits._
 import doobie.postgres.implicits._
+import io.github.markusa380.kessleractserver.vesselHash
 import kessleract.pb.messages._
 
 class VesselRepository(transactor: HikariTransactor[IO]) {
 
   def alreadyExists(bodyId: Int, vessel: VesselSpec): IO[Boolean] = {
-    val vesselHash = vessel.partSpecs.map(_.name).sorted.hashCode
+    val hash = vesselHash(vessel)
     sql"""
-      SELECT COUNT(*) FROM vessel WHERE body_id = $bodyId AND vessel_hash = $vesselHash
+      SELECT COUNT(*) FROM vessel WHERE body_id = $bodyId AND vessel_hash = $hash
     """.query[Int].unique.transact(transactor).map(_ > 0)
   }
 
   def getVotes(bodyId: Int, vessel: VesselSpec): IO[Int] = {
-    val vesselHash = vessel.partSpecs.map(_.name).sorted.hashCode
+    val hash = vesselHash(vessel)
     sql"""
-      SELECT COALESCE(SUM(vote), 0) FROM vessel_votes WHERE body = $bodyId AND vessel_hash = $vesselHash
+      SELECT COALESCE(SUM(vote), 0) FROM vessel_votes WHERE body = $bodyId AND vessel_hash = $hash
     """.query[Int].unique.transact(transactor)
   }
 
@@ -81,12 +82,13 @@ class VesselRepository(transactor: HikariTransactor[IO]) {
   }
 
   // Insert or update vessel
-  def upsertVessel(bodyId: Int, vesselHash: Int, vessel: VesselSpec): IO[Unit] = {
+  def upsertVessel(bodyId: Int, vessel: VesselSpec): IO[Unit] = {
+    val hash            = vesselHash(vessel)
     val parts           = vessel.partSpecs.map(_.name).toList
     val vesselSpecBytes = vessel.toByteArray
     sql"""
       INSERT INTO vessel (body_id, vessel_hash, vessel_spec, parts)
-      VALUES ($bodyId, $vesselHash, $vesselSpecBytes, $parts)
+      VALUES ($bodyId, $hash, $vesselSpecBytes, $parts)
       ON CONFLICT (body_id, vessel_hash)
       DO UPDATE SET vessel_spec = EXCLUDED.vessel_spec
     """.update.run.transact(transactor).void
