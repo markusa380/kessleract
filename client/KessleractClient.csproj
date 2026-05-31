@@ -15,6 +15,11 @@
     <ModPath>$(KSPBasePath)\GameData\KessleractClient</ModPath>
     <TexturesPath>$(ModPath)\Textures</TexturesPath>
     <PluginsPath>$(ModPath)\Plugins</PluginsPath>
+    <PackageStagingRoot>$(BaseIntermediateOutputPath)package</PackageStagingRoot>
+    <PackageModPath>$(PackageStagingRoot)\GameData\KessleractClient</PackageModPath>
+    <PackageTexturesPath>$(PackageModPath)\Textures</PackageTexturesPath>
+    <PackagePluginsPath>$(PackageModPath)\Plugins</PackagePluginsPath>
+    <PackageZipPath>$(MSBuildProjectDirectory)\Kessleract.zip</PackageZipPath>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Assembly-CSharp">
@@ -55,7 +60,7 @@
     <PluginDlls Include="$(OutputPath)System.Runtime.CompilerServices.Unsafe.dll" />
   </ItemGroup>
   <ItemGroup>
-    <Textures Include="Textures\*" />
+    <Textures Include="Textures\**\*" />
     <License Include="..\LICENSE" />
   </ItemGroup>
   <Target Name="Protos" BeforeTargets="BeforeBuild">
@@ -68,7 +73,22 @@
   </Target>
   <Target Name="PostBuild" AfterTargets="Build">
     <Copy SourceFiles="@(PluginDlls)" DestinationFolder="$(PluginsPath)" />
-    <Copy SourceFiles="@(Textures)" DestinationFolder="$(TexturesPath)" SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(Textures)"
+          DestinationFiles="@(Textures->'$(ModPath)\%(Identity)')"
+          SkipUnchangedFiles="true" />
     <Copy SourceFiles="@(License)" DestinationFolder="$(ModPath)" />
+
+    <RemoveDir Directories="$(PackageStagingRoot)" Condition="Exists('$(PackageStagingRoot)')" />
+    <MakeDir Directories="$(PackagePluginsPath)" />
+    <MakeDir Directories="$(PackageTexturesPath)" />
+
+    <Copy SourceFiles="@(PluginDlls)" DestinationFolder="$(PackagePluginsPath)" />
+    <Copy SourceFiles="@(Textures)"
+          DestinationFiles="@(Textures->'$(PackageModPath)\%(Identity)')"
+          SkipUnchangedFiles="true" />
+    <Copy SourceFiles="@(License)" DestinationFolder="$(PackageModPath)" />
+
+    <Delete Files="$(PackageZipPath)" Condition="Exists('$(PackageZipPath)')" />
+    <ZipDirectory SourceDirectory="$(PackageStagingRoot)" DestinationFile="$(PackageZipPath)" Overwrite="true" />
   </Target>
 </Project>
