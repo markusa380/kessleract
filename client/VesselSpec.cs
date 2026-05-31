@@ -1,3 +1,4 @@
+using ModuleWheels;
 using UnityEngine;
 
 namespace Kessleract {
@@ -91,7 +92,7 @@ namespace Kessleract {
                     return false;
                 }
 
-                PopulateModules(partSnapshot, availablePart);
+                PopulateModules(partSnapshot, availablePart, partSpec);
 
                 SetVariant(partSnapshot, partSpec.ModuleVariantName, availablePart);
             }
@@ -119,12 +120,40 @@ namespace Kessleract {
 
         private static void PopulateModules(
                 ProtoPartSnapshot partSnapshot,
-                AvailablePart availablePart
+                AvailablePart availablePart,
+                Pb.PartSpec partSpec
             ) {
-            foreach (var module in availablePart.partPrefab.Modules) {
+            foreach (var prefabModule in availablePart.partPrefab.Modules) {
                 var config = new ConfigNode();
-                module.Save(config);
+                prefabModule.Save(config);
+                AdjustModuleConfig(config, partSpec, prefabModule);
                 partSnapshot.modules.Add(new ProtoPartModuleSnapshot(config));
+            }
+        }
+
+        private static void AdjustModuleConfig(ConfigNode config, Pb.PartSpec partSpec, PartModule prefabModule) {
+            var name = config.GetValue("name");
+
+            if (partSpec.HasIsDeployed) {
+
+                if (name == "ModuleDeployableSolarPanel" ||
+                    name == "ModuleDeployableAntenna" ||
+                    name == "ModuleDeployableRadiator") {
+                    config.SetValue("deployState", partSpec.IsDeployed ? "EXTENDED" : "RETRACTED");
+                }
+
+                if (prefabModule is ModuleWheelDeployment) {
+                    var prefabWheelDeploymentModule = prefabModule as ModuleWheelDeployment;
+                    var deployedPosition = prefabWheelDeploymentModule.deployedPosition;
+                    var retractedPosition = prefabWheelDeploymentModule.retractedPosition;
+                    config.SetValue("position", partSpec.IsDeployed ? deployedPosition : retractedPosition);
+                    config.SetValue("stateString", partSpec.IsDeployed ? "Deployed" : "Retracted");
+                }
+
+                if (prefabModule is ModuleAnimateGeneric) {
+                    config.SetValue("animSwitch", partSpec.IsDeployed);
+                    config.SetValue("animTime", partSpec.IsDeployed ? 1 : 0);
+                }
             }
         }
     }
@@ -155,6 +184,7 @@ namespace Kessleract {
         }
 
         public static Pb.PartSpec To(ProtoPartSnapshot snapshot) {
+            var availablePart = PartLoader.getPartInfoByName(snapshot.partName);
             var attachments = new string[snapshot.attachNodes.Count];
             for (int i = 0; i < snapshot.attachNodes.Count; i++) {
                 attachments[i] = snapshot.attachNodes[i].Save();
@@ -171,9 +201,61 @@ namespace Kessleract {
                 partSpec.ModuleVariantName = snapshot.moduleVariantName;
             }
 
+            SetDeploymentState(snapshot, availablePart, partSpec);
+
             partSpec.Attachments.AddRange(attachments);
 
             return partSpec;
+        }
+
+        private static void SetDeploymentState(ProtoPartSnapshot snapshot, AvailablePart availablePart, Pb.PartSpec partSpec) {
+            foreach (var module in snapshot.modules) {
+                if (module.moduleName == "ModuleDeployableSolarPanel" ||
+                    module.moduleName == "ModuleDeployableAntenna" ||
+                    module.moduleName == "ModuleDeployableRadiator") {
+                    var deployState = module.moduleValues.GetValue("deployState");
+                    if (deployState == null) {
+                        Log.Error($"Could not find deployState for {module.moduleName} on part {snapshot.partName}, skipping");
+                        continue;
+                    }
+                    var isDeployed = deployState == "EXTENDED";
+                    partSpec.IsDeployed = isDeployed;
+                }
+
+                if (module.moduleName == "ModuleWheelDeployment") {
+                    var position = module.moduleValues.GetValue("position");
+                    var prefabModule = availablePart.partPrefab.FindModuleImplementing<ModuleWheelDeployment>();
+                    if (position == null) {
+                        Log.Error($"Could not find position for ModuleWheelDeployment on part {snapshot.partName}, skipping");
+                        continue;
+                    }
+                    if (prefabModule == null) {
+                        Log.Error($"Could not find ModuleWheelDeployment on part {snapshot.partName}, skipping");
+                        continue;
+                    }
+                    float positionNum;
+                    try {
+                        positionNum = float.Parse(position);
+                    }
+                    catch (System.Exception) {
+                        Log.Error($"Could not parse position {position} for ModuleWheelDeployment on part {snapshot.partName}, skipping");
+                        continue;
+                    }
+                    var isDeployed = prefabModule.deployedPosition == positionNum;
+                    partSpec.IsDeployed = isDeployed;
+                }
+
+                // Cargo bays, shielded docking ports, etc.
+                if (module.moduleName == "ModuleAnimateGeneric") {
+                    var animSwitch = module.moduleValues.GetValue("animSwitch");
+                    if (animSwitch == null) {
+                        Log.Error($"Could not find animSwitch for ModuleAnimateGeneric on part {snapshot.partName}, skipping");
+                        continue;
+                    }
+                    var isDeployed = animSwitch == "True";
+                    partSpec.IsDeployed = isDeployed;
+                }
+            }
         }
 
         public static Pb.OrbitSpec To(OrbitSnapshot orbit) {

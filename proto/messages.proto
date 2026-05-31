@@ -25,6 +25,7 @@ message PartSpec {
   repeated string attachments = 5;
   optional string surfaceAttachment = 6;
   optional string moduleVariantName = 7;
+  optional bool isDeployed = 8;
 }
 
 message Vector3 {

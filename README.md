@@ -24,7 +24,9 @@ From within the `server` directory, run:
 
 - `sbt compile` to compile the server application.
 - `sbt startDevDb` to start the development database on localhost
+- `sbt startAdminer` to start the database administration interface
 - `sbt run` to run the server application (stop with Ctrl+C)
 - `sbt stopDevDb` to stop the development database
+- `sbt stopAdminer` to stop the database administration interface
 - `./deploy.sh` to deploy the stack to a Docker swarm
 - `sbt updateServer` to update the image of the server on Docker swarm

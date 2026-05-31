@@ -14,12 +14,14 @@ val ScalaTagsVersion           = "0.12.0"
 lazy val startDevDb =
   taskKey[Unit]("Starts a local development database using Docker")
 lazy val stopDevDb = taskKey[Unit]("Stops local development database")
+lazy val startAdminer =
+  taskKey[Unit]("Starts Adminer for local development database")
+lazy val stopAdminer =
+  taskKey[Unit]("Stops Adminer for local development database")
 lazy val updateServer =
   taskKey[Unit]("Deploys the server to the production environment")
 
 Global / onChangedBuildSource := ReloadOnSourceChanges
-
-val allowableDevDockerContexts = Set("default", "desktop-linux")
 
 lazy val root = (project in file("."))
   .enablePlugins(JavaAppPackaging, DockerPlugin)
@@ -84,11 +86,7 @@ lazy val root = (project in file("."))
     startDevDb := {
       import sys.process._
       val currentContext = "docker context show".!!.trim
-      if (!allowableDevDockerContexts.contains(currentContext)) {
-        throw new Exception(
-          s"Current Docker context is '$currentContext' - you probably do not want to start the development database here."
-        )
-      }
+      checkDevDockerContext()
       val dockerCmd = "docker run --name kessleract-db --rm -d" +
         " -v kessleract_db:/var/lib/postgresql " +
         "-p 5432:5432" +
@@ -102,13 +100,27 @@ lazy val root = (project in file("."))
     stopDevDb := {
       import sys.process._
       val currentContext = "docker context show".!!.trim
-      if (!allowableDevDockerContexts.contains(currentContext)) {
-        throw new Exception(
-          s"Current Docker context is '$currentContext' - you probably are not running the development database here."
-        )
-      }
+      checkDevDockerContext()
       "docker stop kessleract-db".!!
       println("Stopped development database container")
+    },
+    startAdminer := {
+      import sys.process._
+      val currentContext = "docker context show".!!.trim
+      checkDevDockerContext()
+      val dockerCmd = "docker run --name kessleract-adminer --rm -d" +
+        " -p 8081:8080" +
+        " --link kessleract-db:db" +
+        " adminer"
+      val containerId = dockerCmd.!!.trim
+      println(s"Started Adminer container (ID: $containerId)")
+      println(s"Connect using following URL: http://localhost:8081/?pgsql=db&username=kessleract&db=kessleract&ns=public and enter password 'kessleract'")
+    },
+    stopAdminer := {
+      import sys.process._
+      checkDevDockerContext()
+      "docker stop kessleract-adminer".!!
+      println("Stopped Adminer container")
     },
     updateServer := {
       import sys.process._
@@ -118,3 +130,15 @@ lazy val root = (project in file("."))
       s"docker service update --force $serviceId".!!
     }
   )
+
+val allowableDevDockerContexts = Set("default", "desktop-linux")
+
+def checkDevDockerContext(): Unit = {
+  import sys.process._
+  val currentContext = "docker context show".!!.trim
+  if (!allowableDevDockerContexts.contains(currentContext)) {
+    throw new Exception(
+      s"Current Docker context is '$currentContext' - you probably do not want to run this command here."
+    )
+  }
+}
