@@ -8,7 +8,7 @@ val FlywayVersion              = "11.15.0"
 val DoobieVersion              = "1.0.0-RC10"
 val ScalaPbCirceVersion        = "0.16.0"
 val Log4CatsVersion            = "2.7.1"
-val TestContainersScalaVersion = "0.43.0"
+val TestContainersScalaVersion = "0.44.1"
 val ScalaTagsVersion           = "0.12.0"
 
 lazy val startDevDb =

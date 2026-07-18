@@ -25,6 +25,8 @@ services:
     networks:
       - servernet
       - default
+    ports:
+      - 8099:8080
   db:
     image: postgres:18
     environment:
