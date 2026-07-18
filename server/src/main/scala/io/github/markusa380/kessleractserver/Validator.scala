@@ -7,7 +7,7 @@ val rotationBound           = 1000.0
 val maxVesselParts          = 200
 val maxPartNameLength       = 50
 val maxAttachNodeNameLength = 50
-val moduleVariantNameLength  = 50
+val moduleVariantNameLength = 50
 
 def validateVesselSpec(vessel: pb.VesselSpec): Either[String, Unit] = for {
   _ <- Either.cond(vessel.partSpecs.size > 0, (), "Vessel must have at least one part")
@@ -41,7 +41,7 @@ def validatePart(
       s"Module variant name exceeds maximum length of $moduleVariantNameLength characters"
     )
   }
-    
+
 } yield ()
 
 def validateAttachNode(name: String): Either[String, Unit] = for {

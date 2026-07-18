@@ -58,6 +58,7 @@ lazy val root = (project in file("."))
       "io.github.scalapb-json" %% "scalapb-circe-macros"            % ScalaPbCirceVersion,
       "org.typelevel"          %% "log4cats-core"                   % Log4CatsVersion,
       "org.typelevel"          %% "log4cats-slf4j"                  % Log4CatsVersion,
+      "net.logstash.logback"    % "logstash-logback-encoder"        % "7.4",
       "com.lihaoyi"            %% "scalatags"                       % ScalaTagsVersion
     ),
     assembly / assemblyMergeStrategy := {
@@ -82,7 +83,7 @@ lazy val root = (project in file("."))
       files
     },
     Test / fork := true,
-    run / fork := true,
+    run / fork  := true,
     startDevDb := {
       import sys.process._
       val currentContext = "docker context show".!!.trim
