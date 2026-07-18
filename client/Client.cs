@@ -102,11 +102,18 @@ namespace Kessleract {
 
                 var take = Math.Max(0, KessleractConfig.Instance.MaxAbandonedVehiclesPerBody - abandonedVesselsHashes.Count);
 
+                var allowableParts = PartLoader.LoadedPartsList
+                    .Where(part => part.amountAvailable > 0)
+                    .Select(part => part.name)
+                    .ToList();
+
                 var requestBody = new Pb.DownloadRequest {
                     Body = body.flightGlobalsIndex,
                     Take = take,
                 };
 
+                requestBody.ExcludedHashes.AddRange(abandonedVesselsHashes);
+                requestBody.AllowableParts.AddRange(allowableParts);
 
                 yield return Request.DownloadVesselCoroutine(
                     requestBody,

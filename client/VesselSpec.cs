@@ -1,5 +1,7 @@
 using ModuleWheels;
 using UnityEngine;
+using System;
+using System.Collections.Generic;
 
 namespace Kessleract {
     public class FromProtobuf {
@@ -125,7 +127,21 @@ namespace Kessleract {
             ) {
             foreach (var prefabModule in availablePart.partPrefab.Modules) {
                 var config = new ConfigNode();
-                prefabModule.Save(config);
+
+                // ModuleScienceLab will throw a NullReferenceException if we try to save it without initializing the ExperimentData list.
+                // Nothing bad has happened by setting it to an empty list directly.
+                if (prefabModule is ModuleScienceLab lab) {
+                    lab.ExperimentData = new List<string>();
+                }
+
+                try {
+                    prefabModule.Save(config);
+                }
+                catch (Exception e) {
+                    Log.Error($"Failed to save module {prefabModule.moduleName} for part {partSnapshot.partName}: {e.Message}", e);
+                    continue;
+                }
+
                 AdjustModuleConfig(config, partSpec, prefabModule);
                 partSnapshot.modules.Add(new ProtoPartModuleSnapshot(config));
             }

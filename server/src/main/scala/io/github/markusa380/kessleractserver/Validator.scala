@@ -5,13 +5,14 @@ import kessleract.pb.{messages => pb}
 val vesselPartBound         = 50.0
 val rotationBound           = 1000.0
 val maxVesselParts          = 200
+val minVesselParts          = 3
 val maxPartNameLength       = 50
 val maxAttachNodeNameLength = 50
 val moduleVariantNameLength = 50
 
 def validateVesselSpec(vessel: pb.VesselSpec): Either[String, Unit] = for {
-  _ <- Either.cond(vessel.partSpecs.size > 0, (), "Vessel must have at least one part")
-  _ <- Either.cond(vessel.partSpecs.size <= 200, (), s"Vessel cannot have more than $maxVesselParts parts, found: ${vessel.partSpecs.size}")
+  _ <- Either.cond(vessel.partSpecs.size >= minVesselParts, (), s"Vessel must have at least $minVesselParts parts, found: ${vessel.partSpecs.size}")
+  _ <- Either.cond(vessel.partSpecs.size <= maxVesselParts, (), s"Vessel cannot have more than $maxVesselParts parts, found: ${vessel.partSpecs.size}")
   _ <- vessel.partSpecs
     .map(validatePart)
     .foldLeft[Either[String, Unit]](Right(())) { (acc, res) =>
