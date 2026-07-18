@@ -1,0 +1,1 @@
+DELETE FROM vessel WHERE array_length(parts, 1) < 3;
