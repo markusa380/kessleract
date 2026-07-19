@@ -16,6 +16,8 @@ namespace Kessleract {
 
         public List<string> partsList = new List<string>();
 
+        private const int MAX_REQUESTS_PER_INTERVAL = 3;
+
         public static Vessel.Situations[] allowableSituations = new Vessel.Situations[] {
           Vessel.Situations.ORBITING
         };
@@ -27,6 +29,7 @@ namespace Kessleract {
 
         double timeToUpload = 10.0;
         double timeToDownload = 10.0;
+        private int downloadIndex = 0;
 
         public void Update() {
             timeToUpload -= Time.deltaTime;
@@ -95,7 +98,17 @@ namespace Kessleract {
         private IEnumerator DownloadAbandonedVehiclesCoroutine() {
             Log.Info("Downloading abandoned vehicles");
 
-            foreach (var body in FlightGlobals.Bodies) {
+            var startDownloadIndex = downloadIndex;
+            var numBodies = FlightGlobals.Bodies.Count;
+
+            for (var requestCount = 0;
+                requestCount < MAX_REQUESTS_PER_INTERVAL &&
+                    downloadIndex < startDownloadIndex + numBodies;
+                downloadIndex++
+            ) {
+                var bodyIndex = downloadIndex % numBodies;
+                var body = FlightGlobals.Bodies[bodyIndex];
+
                 Log.Info($"Downloading abandoned vessels for body {body.name} ({body.flightGlobalsIndex})");
 
                 // Include all vessels, not just the same body, important if the downloaded orbit happens
@@ -104,7 +117,12 @@ namespace Kessleract {
                 int bodyAbandonedVesselsCount = abandonedVessels.Count(v => v.vessel.mainBody == body);
                 List<int> abandonedVesselsHashes = abandonedVessels.Select(v => v.hash).ToList();
 
-                var take = Math.Max(0, KessleractConfig.Instance.MaxAbandonedVehiclesPerBody - bodyAbandonedVesselsCount);
+                var take = KessleractConfig.Instance.MaxAbandonedVehiclesPerBody - bodyAbandonedVesselsCount;
+
+                if (take <= 0) {
+                    Log.Info($"Skipping download for body {body.name} ({body.flightGlobalsIndex}) because we already have {bodyAbandonedVesselsCount} abandoned vessels and the max is {KessleractConfig.Instance.MaxAbandonedVehiclesPerBody}");
+                    continue;
+                }
 
                 var allowableParts = PartLoader.LoadedPartsList
                     .Where(part => part.amountAvailable > 0)
@@ -127,6 +145,8 @@ namespace Kessleract {
                         }
                     }
                 );
+
+                requestCount++;
             }
         }
 
