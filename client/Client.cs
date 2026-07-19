@@ -98,9 +98,13 @@ namespace Kessleract {
             foreach (var body in FlightGlobals.Bodies) {
                 Log.Info($"Downloading abandoned vessels for body {body.name} ({body.flightGlobalsIndex})");
 
-                List<int> abandonedVesselsHashes = ExistingAbandonedVesselHashes(body);
+                // Include all vessels, not just the same body, important if the downloaded orbit happens
+                // to actually drop into the sphere of influence of another body
+                List<AbandonedVessel> abandonedVessels = ExistingAbandonedVesselHashes();
+                int bodyAbandonedVesselsCount = abandonedVessels.Count(v => v.vessel.mainBody == body);
+                List<int> abandonedVesselsHashes = abandonedVessels.Select(v => v.hash).ToList();
 
-                var take = Math.Max(0, KessleractConfig.Instance.MaxAbandonedVehiclesPerBody - abandonedVesselsHashes.Count);
+                var take = Math.Max(0, KessleractConfig.Instance.MaxAbandonedVehiclesPerBody - bodyAbandonedVesselsCount);
 
                 var allowableParts = PartLoader.LoadedPartsList
                     .Where(part => part.amountAvailable > 0)
@@ -126,14 +130,22 @@ namespace Kessleract {
             }
         }
 
-        private static List<int> ExistingAbandonedVesselHashes(CelestialBody body) {
-            List<int> abandonedVesselsHashes = new List<int>();
+        class AbandonedVessel {
+            public Vessel vessel;
+            public int hash;
+        }
+
+        private static List<AbandonedVessel> ExistingAbandonedVesselHashes() {
+            List<AbandonedVessel> abandonedVesselsHashes = new List<AbandonedVessel>();
             foreach (var vessel in FlightGlobals.Vessels) {
-                if (vessel.mainBody == body) {
-                    var hash = Naming.GetVesselHash(vessel);
-                    if (hash != -1) {
-                        abandonedVesselsHashes.Add(hash);
-                    }
+                var hash = Naming.GetVesselHash(vessel);
+                if (hash != -1) {
+                    abandonedVesselsHashes.Add(
+                        new AbandonedVessel {
+                            vessel = vessel,
+                            hash = hash
+                        }
+                    );
                 }
             }
             return abandonedVesselsHashes;
