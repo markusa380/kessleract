@@ -16,7 +16,7 @@ namespace Kessleract {
 
         public List<string> partsList = new List<string>();
 
-        private const int MAX_REQUESTS_PER_INTERVAL = 3;
+        private const int MAX_REQUESTS_PER_INTERVAL = 5;
 
         public static Vessel.Situations[] allowableSituations = new Vessel.Situations[] {
           Vessel.Situations.ORBITING
